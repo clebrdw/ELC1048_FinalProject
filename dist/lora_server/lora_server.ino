@@ -1,32 +1,3 @@
-/*
-  Heltec.LoRa Multiple Communication
-
-  This example provide a simple way to achieve one to multiple devices
-  communication.
-
-  Each devices send datas in broadcast method. Make sure each devices
-  working in the same BAND, then set the localAddress and destination
-  as you want.
-  
-  Sends a message every half second, and uses interrup method check
-  the new incoming messages. Implements a one-byte addressing scheme,
-  with 0xFD as the broadcast address. You can set this address as you
-  want.
-
-  The default interrupt pin in SX1276/8(DIO0) connected to ESP32's GPIO26
-
-  Note: while sending, Heltec.LoRa radio is not listening for incoming messages.
-  Note2: when using the callback method, you can't use any of the Stream
-  functions that rely on the timeout, such as readString, parseInt(), etc.
-  
-  by Aaron.Lee from HelTec AutoMation, ChengDu, China
-  成都惠利特自动化科技有限公司
-  www.heltec.cn
-  
-  this project also realess in GitHub:
-  https://github.com/Heltec-Aaron-Lee/WiFi_Kit_series
-*/
-
 #include "heltec.h"
 
 #define BAND    915E6  //you can set band here directly,e.g. 868E6,915E6
@@ -47,7 +18,7 @@ int interval = 2000;          // interval between sends
 void setup()
 {
    //WIFI Kit series V1 not support Vext control
-  Heltec.begin(false /*DisplayEnable Enable*/, true /*Heltec.LoRa Disable*/, true /*Serial Enable*/, true /*PABOOST Enable*/, BAND /*long BAND*/);
+  Heltec.begin(false /*DisplayEnable Enable*/, true /*Heltec.LoRa Enable*/, true /*Serial Enable*/, true /*PABOOST Enable*/, BAND /*long BAND*/);
 
   LoRa.onReceive(onReceive);
   LoRa.receive();
@@ -58,9 +29,9 @@ void loop()
 {
   if (millis() - lastSendTime > interval)
   {
-    String message = "Mensagem do servidor!";   // send a message
+    String message = "Servidor: " + (String)random(0, 100);   // send a message
     sendMessage(message);
-    Serial.println("Sending " + message);
+    Serial.println("[SENDING] " + message);
     Serial.println("");
     lastSendTime = millis();            // timestamp the message
     interval = random(2000) + 1000;     // 2-3 seconds
@@ -111,12 +82,12 @@ void onReceive(int packetSize)
   }
 
   // if message is for this device, or broadcast, print details:
-  Serial.println("Received from: 0x" + String(sender, HEX));
-  Serial.println("Sent to: 0x" + String(recipient, HEX));
-  Serial.println("Message ID: " + String(incomingMsgId));
-  Serial.println("Message length: " + String(incomingLength));
-  Serial.println("Message: " + incoming);
-  Serial.println("RSSI: " + String(LoRa.packetRssi()));
+  Serial.print("[RECEIVED] From 0x" + String(sender, HEX));
+  Serial.println(" to 0x" + String(recipient, HEX));
+  Serial.println(" - ID: " + String(incomingMsgId));
+  Serial.println(" - Length " + String(incomingLength));
+  Serial.println(" : " + incoming);
+  Serial.println(" - RSSI: " + String(LoRa.packetRssi()));
   //Serial.println("Snr: " + String(LoRa.packetSnr()));
   Serial.println();
 }
