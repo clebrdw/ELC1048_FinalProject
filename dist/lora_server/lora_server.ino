@@ -27,7 +27,7 @@ void setup()
 
 void loop()
 {
-  if (millis() - lastSendTime > interval)
+  /*if (millis() - lastSendTime > interval)
   {
     String message = "Servidor: " + (String)random(0, 100);   // send a message
     sendMessage(message);
@@ -36,7 +36,7 @@ void loop()
     lastSendTime = millis();            // timestamp the message
     interval = random(2000) + 1000;     // 2-3 seconds
     LoRa.receive();                     // go back into receive mode
-  }
+  }*/
 }
 
 void sendMessage(String outgoing)
