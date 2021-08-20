@@ -74,20 +74,22 @@ void onReceive(int packetSize)
 
 void task1(void * parameters){
     for(;;){
-        if( xSemaphoreTake( Mutex_teste, ( TickType_t ) NUMERO_TICKS_ESPERA ) == pdTRUE){
+        if( xSemaphoreTake( Mutex_teste, portMAX_DELAY ) == pdTRUE){
             /*se nao estourar NUMERO_TICKS_ESPERA, conseguiu o semaforo*/
 
             varTest = varTest + 10;
 
-            String message = "Cliente 1: " + (String)varTest;     // send a message
-            sendMessage(message);
-            Serial.println("[SENDING 1] " + message);
+            //String message = "Cliente 1: " + (String)varTest;     // send a message
+            String message = "Cliente 1: ";     // send a message
+            sendMessage((String)varTest);
+            //Serial.println("[SENDING 1] " + message);
+            Serial.println("[SENDING 1] ");
             LoRa.receive();                                         // go back into receive mode
 
             /*ja utilizei a variavel compartilhada, então libero o semaforo*/
             xSemaphoreGive( Mutex_teste );
         }
-        vTaskDelay(1000/ portTICK_PERIOD_MS);
+        vTaskDelay(5000/ portTICK_PERIOD_MS);
     }
 }
 
@@ -101,7 +103,7 @@ void task2(void * parameters){
             /*ja utilizei a variavel compartilhada, então libero o semaforo*/
             xSemaphoreGive( Mutex_teste );
         }
-        vTaskDelay(100/ portTICK_PERIOD_MS);
+        vTaskDelay(150/ portTICK_PERIOD_MS);
     }
 }
 
@@ -115,11 +117,20 @@ void setup()
 
     Mutex_teste = xSemaphoreCreateMutex();  // Criacao do semaforo de leitura
 
-    xTaskCreate(task1,"Teste 1", 5000, NULL, 1, NULL);
-    xTaskCreate(task2,"Teste 2", 1000, NULL, 2, NULL);
+    xTaskCreate(task1,"Teste 1", 2000, NULL, 2, NULL);
+    xTaskCreate(task2,"Teste 2", 1000, NULL, 1, NULL);
 }
 
 void loop()
 {
-    /**/
+  /*if (millis() - lastSendTime > interval)
+  {
+    varTest = varTest + 10;
+
+    sendMessage((String)varTest);
+    Serial.println("Sending ");
+    lastSendTime = millis();            // timestamp the message
+    interval = 2000;     // 2-3 seconds
+    LoRa.receive();                     // go back into receive mode
+  }*/
 }

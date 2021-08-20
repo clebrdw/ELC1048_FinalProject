@@ -1,0 +1,3 @@
+/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/CMakeFiles/ELC1048_FinalProject.dir
