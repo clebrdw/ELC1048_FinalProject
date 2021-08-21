@@ -1,11 +1,20 @@
+/**
+* @file lora_client.ino
+* @brief Código do Cliente
+* @author by Cléber Werlang, Cristian Wulfing
+* @link https://github.com/CristianAugusto/ELC1048_FinalProject
+* @date 08-2021
+*/
 #include "heltec.h"
 
-#define NUMERO_TICKS_ESPERA 3 //qtde de ticks que a tarefa vai esperar para conseguir o semaforo
+/// MACRO de tempo de espera para tentar novamente o semáforo
+#define NUMERO_TICKS_ESPERA 3
 
 byte localAddress = 0xBB;
 byte serverAddress = 0xFF;
 
-typedef struct // telemetryService
+/// telemetryService
+typedef struct 
 {
     SemaphoreHandle_t mutex;
     String outBuffer;
@@ -13,7 +22,8 @@ typedef struct // telemetryService
     byte msgCount;
 } telemetryServiceStruct;
 
-typedef struct // currentSensor
+/// currentSensor
+typedef struct 
 {
     SemaphoreHandle_t mutex;
     double leitura;
@@ -21,20 +31,23 @@ typedef struct // currentSensor
     int index;
 } currentSensorStruct;
 
-typedef struct // motorConfigStruct
+/// motorConfigStruct
+typedef struct 
 {
     bool status;
     long current;
 
 } motorConfigStruct;
 
-typedef struct // electricalRelay
+/// electricalRelay
+typedef struct 
 {
     SemaphoreHandle_t mutex;
     bool status;
 } electricalRelayStruct;
 
-typedef struct // electricalMotorStruct
+/// electricalMotorStruct
+typedef struct 
 {
     motorConfigStruct config;
 } electricalMotorStruct;
@@ -48,7 +61,7 @@ electricalMotorStruct electricalMotor;
 long lastSendTime = 0;  // last send time
 int interval = 2000;    // interval between sends
 */
-
+/// Função que simula a leitura de corrente
 void currentSensorReader(void * parameters)
 {
     for(;;)
@@ -126,7 +139,7 @@ void telemetryInfoSender(void * parameters)
 
             xSemaphoreGive(telemetryService.mutex);
         }
-        vTaskDelay(1000/ portTICK_PERIOD_MS); // ~1500ms // 1.5s
+        vTaskDelay(1000/ portTICK_PERIOD_MS); // ~1500ms // 1.5s ->(1seg + 0.5seg de atraso LoRa) 
     }
 }
 
@@ -202,8 +215,8 @@ void telemetryActionReceiver(int packetSize)
         xSemaphoreGive(electricalRelay.mutex);
     }
 }
-
-void electricalRelayControl(void * parameters) // criar thread que verifica se o valor atual é diferente etc
+/// Função que cria uma thread que verifica se o valor atual é diferente etc
+void electricalRelayControl(void * parameters) 
 {
     for(;;)
     {
@@ -235,6 +248,7 @@ void electricalRelayControl(void * parameters) // criar thread que verifica se o
 }
 */
 
+/// Função que executa apenas uma vez e sempre que o microcontrolador é ligado.
 void setup()
 {
     Heltec.begin(false /*DisplayEnable Enable*/, true /*Heltec.LoRa Enable*/, true /*Serial Enable*/, true /*PABOOST Enable*/, 915E6 /*long BAND*/);
@@ -282,7 +296,7 @@ void setup()
     /*xTaskCreate(task1,"Teste 1", 2000, NULL, 2, NULL);
     xTaskCreate(task2,"Teste 2", 1000, NULL, 1, NULL);*/
 }
-
+/// Função utilizada normalmente quando o propósito do código não é RTOS.
 void loop()
 {
   /*if (millis() - lastSendTime > interval)
