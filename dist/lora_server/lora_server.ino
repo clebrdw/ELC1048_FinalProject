@@ -87,8 +87,10 @@ void telemetryInfoReceiver(int packetSize)
 
             xSemaphoreGive(currentSensor.mutex);
         }*/
+        
+        LoRa.receive(); // coloca o LoRa em modo listening novamente
 
-        /*aux++;
+        aux++;
         if(aux == 10)
         {
             telemetryService.outBuffer = "1";
@@ -122,9 +124,9 @@ void telemetryInfoReceiver(int packetSize)
 
         LoRa.receive(); // coloca o LoRa em modo listening novamente
 
-        Serial.println("[actionSender] Command sent successfully: " + telemetryService.outBuffer);*/
+        Serial.println("[actionSender] Command sent successfully: " + telemetryService.outBuffer);
 
-        libera:
+        libera: // verificar outros possíveis casos
         xSemaphoreGive(telemetryService.mutex);
     }
 }
