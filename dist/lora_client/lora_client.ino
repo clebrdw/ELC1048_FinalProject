@@ -1,14 +1,14 @@
 /**
 * @file lora_client.ino
 * @brief Código do Cliente
-* @author by Cléber Werlang, Cristian Wulfing
+* @author by Cléber Werlang, Cristian Wülfing
 * @link https://github.com/CristianAugusto/ELC1048_FinalProject
 * @date 08-2021
 */
 #include "heltec.h"
 
 /// MACRO de tempo de espera para tentar novamente o semáforo
-#define NUMERO_TICKS_ESPERA 3
+#define WAIT_TICKS 3
 
 byte localAddress = 0xBB;
 byte serverAddress = 0xFF;
@@ -57,15 +57,12 @@ electricalRelayStruct electricalRelay;
 telemetryServiceStruct telemetryService;
 electricalMotorStruct electricalMotor;
 
-/*
-long lastSendTime = 0;  // last send time
-int interval = 2000;    // interval between sends
-*/
 /// Função que simula a leitura de corrente
 void currentSensorReader(void * parameters)
 {
     for(;;)
     {
+        /*if( xSemaphoreTake( Mutex_teste, ( TickType_t ) WAIT_TICKS ) == pdTRUE)*/
         if(xSemaphoreTake(currentSensor.mutex, portMAX_DELAY) == pdTRUE)
         {
             if(currentSensor.index == 100)
@@ -97,7 +94,6 @@ void currentSensorReader(void * parameters)
                     }
                 }
 
-                // teste //
                 //Serial.println("[currentSensorReader] Read: " + (String)currentSensor.leitura);
             }
             else
@@ -159,14 +155,14 @@ void telemetryActionReceiver(int packetSize)
 
         if (LoRa.read() != telemetryService.inBuffer.length())
         {
-            Serial.println("[actionReceiver] ERROR: message length does not match length.");
+            Serial.println("[actionReceiver] ERROR: message lengths doesn't match.");
             return;
         }
 
         // if the recipient isn't this device or broadcast,
         if (recipient != localAddress)
         {
-            Serial.println("[actionReceiver] ERROR: this message is not for me.");
+            Serial.println("[actionReceiver] ERROR: this message isn't for me.");
             return;
         }
 
@@ -233,20 +229,6 @@ void electricalRelayControl(void * parameters)
         vTaskDelay(100/ portTICK_PERIOD_MS); // 100ms
     }
 }
-/*void task2(void * parameters){
-    for(;;){
-        if( xSemaphoreTake( Mutex_teste, ( TickType_t ) NUMERO_TICKS_ESPERA ) == pdTRUE){
-            //se nao estourar NUMERO_TICKS_ESPERA, conseguiu o semaforo
-
-            varTest = varTest - 1;
-
-            //ja utilizei a variavel compartilhada, então libero o semaforo
-            xSemaphoreGive( Mutex_teste );
-        }
-        vTaskDelay(150/ portTICK_PERIOD_MS);
-    }
-}
-*/
 
 /// Função que executa apenas uma vez e sempre que o microcontrolador é ligado.
 void setup()
@@ -299,14 +281,5 @@ void setup()
 /// Função utilizada normalmente quando o propósito do código não é RTOS.
 void loop()
 {
-  /*if (millis() - lastSendTime > interval)
-  {
-    varTest = varTest + 10;
-
-    sendMessage((String)varTest);
-    Serial.println("Sending ");
-    lastSendTime = millis();            // timestamp the message
-    interval = 2000;     // 2-3 seconds
-    LoRa.receive();                     // go back into receive mode
-  }*/
+  /* */
 }
