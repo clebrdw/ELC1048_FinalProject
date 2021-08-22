@@ -6,6 +6,10 @@
 * @date 08-2021
 */
 #include "heltec.h"
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x3F, 2,1,0,4,5,6,7,3, POSITIVE); 
 
 /// MACRO de tempo de espera para tentar novamente o semáforo
 #define WAIT_TICKS 3
@@ -274,6 +278,8 @@ void setup()
 {
     Heltec.begin(false /*DisplayEnable Enable*/, true /*Heltec.LoRa Enable*/, true /*Serial Enable*/, true /*PABOOST Enable*/, 915E6 /*long BAND*/);
 
+    lcd.begin(16,2);
+
     pinMode(LED_PIN, OUTPUT); // led
 
     Serial.println("[MAIN] Launching Heltec.LoRa service.");
@@ -316,4 +322,10 @@ void setup()
 void loop()
 {
     /* */
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print((String)currentSensor.leitura);
+    lcd.setCursor(0,1);
+    lcd.print("Modulo I2C");
+    delay(1000);
 }
