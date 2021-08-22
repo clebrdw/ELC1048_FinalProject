@@ -13,8 +13,6 @@
 byte localAddress = 0xFF;
 byte clientAddress = 0xBB;
 
-int aux = 0;
-
 /// telemetryService
 typedef struct
 {
@@ -23,6 +21,13 @@ typedef struct
     String inBuffer;
     byte msgCount;
 } telemetryServiceStruct;
+
+/// serialService
+typedef struct
+{
+    SemaphoreHandle_t mutex;
+    String inBuffer;
+} serialServiceStruct;
 
 /// dataStorage
 typedef struct
@@ -34,6 +39,7 @@ typedef struct
 } dataStorageStruct;
 
 telemetryServiceStruct telemetryService;
+serialServiceStruct serialService;
 dataStorageStruct dataStorage;
 
 void telemetryInfoReceiver(int packetSize)
@@ -43,6 +49,7 @@ void telemetryInfoReceiver(int packetSize)
 
     if(xSemaphoreTake(telemetryService.mutex, portMAX_DELAY) == pdTRUE)
     {
+        
         // read packet header bytes:
         int recipient = LoRa.read();          // recipient address
         byte sender = LoRa.read();            // sender address
@@ -66,7 +73,7 @@ void telemetryInfoReceiver(int packetSize)
             goto libera;
         }
 
-        Serial.println("[telemetryReceiver] Received: " + telemetryService.inBuffer);
+        Serial.println("[telemetryReceiver] Received: " + telemetryService.inBuffer + "A");
 
         /*
         Serial.print("[RECEIVED] From 0x" + String(sender, HEX));
@@ -75,59 +82,118 @@ void telemetryInfoReceiver(int packetSize)
         Serial.println(" : " + telemetryService.inBuffer);
          */
 
-        // enviar comando como retorno
-
-        // aumentar velocidade  -> status = 1, speed = x
-        // diminuir velocidade  -> status = 1, speed = x
-        // desligar             -> status = 0, speed = 0
-
-        /*if(xSemaphoreTake(currentSensor.mutex, portMAX_DELAY) == pdTRUE)
-        {
-            telemetryService.outBuffer = (String)currentSensor.leitura;
-
-            xSemaphoreGive(currentSensor.mutex);
-        }*/
-        
-        LoRa.receive(); // coloca o LoRa em modo listening novamente
-
-        aux++;
-        if(aux == 10)
-        {
-            telemetryService.outBuffer = "1";
-            printf("[actionSender] Sending: wait.\n");
-        }
-        else if(aux == 20)
-        {
-            telemetryService.outBuffer = "2";
-            printf("[actionSender] Sending: turn on.\n");
-        }
-        else if(aux == 30)
-        {
-            telemetryService.outBuffer = "3";
-            printf("[actionSender] Sending: keep on %dA.\n", 5);
-        }
-        else if(aux == 40)
-        {
-            telemetryService.outBuffer = "0";
-            printf("[actionSender] Sending: turn off.\n");
-            aux=0;
-        }
-
-        LoRa.beginPacket();                                 // start packet
-        LoRa.write(clientAddress);                          // add clientAddress address
-        LoRa.write(localAddress);                           // add sender address
-        LoRa.write(telemetryService.msgCount);              // add message ID
-        LoRa.write(telemetryService.outBuffer.length());    // add payload length
-        LoRa.print(telemetryService.outBuffer);             // add payload
-        LoRa.endPacket();                                   // finish packet and send it
-        telemetryService.msgCount++;                        // increment message ID
-
-        LoRa.receive(); // coloca o LoRa em modo listening novamente
-
-        Serial.println("[actionSender] Command sent successfully: " + telemetryService.outBuffer);
-
-        libera: // verificar outros possíveis casos
+        libera:
         xSemaphoreGive(telemetryService.mutex);
+        
+        LoRa.receive();
+    }
+}
+
+void telemetryActionSender(void * parameters)
+{
+    for(;;)
+    {
+        if( xSemaphoreTake(telemetryService.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
+        {
+            if(telemetryService.inBuffer != "-1")
+            {
+                // enviar comando como retorno
+        
+                // aumentar velocidade  -> status = 1, speed = x
+                // diminuir velocidade  -> status = 1, speed = x
+                // desligar             -> status = 0, speed = 0
+        
+                /*if(xSemaphoreTake(currentSensor.mutex, portMAX_DELAY) == pdTRUE)
+                {
+                    telemetryService.outBuffer = (String)currentSensor.leitura;
+        
+                    xSemaphoreGive(currentSensor.mutex);
+                }*/
+
+                //telemetryService.inBuffer
+                if(serialService.inBuffer.equals(""))
+                {
+                    telemetryService.outBuffer = "0;0";
+                    Serial.println("[actionSender] Sending: OK");
+                }
+                else
+                {
+                    char buf[sizeof(telemetryService.inBuffer)];
+                    String tmp[2];
+                    int i = 0;
+                    serialService.inBuffer.toCharArray(buf, sizeof(buf));
+                    char *p = buf;
+                    char *str;
+                    while ((str = strtok_r(p, ";", &p)) != NULL)
+                    {
+                        tmp[i++] = str;
+                    }
+
+                    if(tmp[0].equals("1"))
+                    {
+                        telemetryService.outBuffer = serialService.inBuffer;
+                        Serial.println("[actionSender] Sending: wait");
+                    }
+                    else if(tmp[0].equals("2"))
+                    {
+                        telemetryService.outBuffer = serialService.inBuffer;
+                        Serial.println("[actionSender] Sending: turn on");
+                    }
+                    else if(tmp[0].equals("3"))
+                    {
+                        telemetryService.outBuffer = serialService.inBuffer;
+                        Serial.println("[actionSender] Sending: keep on " + tmp[1] + "A");
+                    }
+                    else if(tmp[0].equals("4"))
+                    {
+                        telemetryService.outBuffer = serialService.inBuffer;
+                        Serial.println("[actionSender] Sending: turn off");
+                    }
+                    else
+                    {
+                        Serial.println("[SERIAL] Command not found");
+                    }
+                    serialService.inBuffer = "";
+                }
+        
+                LoRa.beginPacket();                                 // start packet
+                LoRa.write(clientAddress);                          // add clientAddress address
+                LoRa.write(localAddress);                           // add sender address
+                LoRa.write(telemetryService.msgCount);              // add message ID
+                LoRa.write(telemetryService.outBuffer.length());     // add payload length
+                LoRa.print(telemetryService.outBuffer);              // add payload
+                LoRa.endPacket();                                   // finish packet and send it
+                telemetryService.msgCount++;                        // increment message ID
+
+                telemetryService.inBuffer = "-1";
+
+                Serial.println("[actionSender] Command sent successfully.");
+
+                Serial.println("");
+                 
+                LoRa.receive(); // coloca o LoRa em modo listening novamente
+            }
+
+            xSemaphoreGive(telemetryService.mutex);
+        }
+        vTaskDelay(100/ portTICK_PERIOD_MS); // 100ms
+    }
+}
+
+void serialReader(void * parameters)
+{
+    for(;;)
+    {
+        if( xSemaphoreTake(serialService.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
+        {
+            if(Serial.available() > 0)
+            {
+                serialService.inBuffer = Serial.readString();
+                Serial.println("[SERIAL] Comando recebido: " + serialService.inBuffer);
+            }
+            xSemaphoreGive(serialService.mutex);
+        }
+        vTaskDelay(10/ portTICK_PERIOD_MS); // 10ms
     }
 }
 
@@ -143,9 +209,20 @@ void setup()
 
     //
     telemetryService.mutex = xSemaphoreCreateMutex();
-    telemetryService.outBuffer = "";
+    telemetryService.outBuffer = "1"; // iniciar com wait
     telemetryService.inBuffer = "";
     telemetryService.msgCount = 0;
+    //
+    Serial.println("[MAIN] Launching telemetryActionSender thread.");
+    xTaskCreate(telemetryActionSender,"telemetryActionSender", 2000, NULL, 1, NULL); // prioridade 2
+    //
+
+    //
+    serialService.mutex = xSemaphoreCreateMutex();
+    serialService.inBuffer = "";
+    //
+    Serial.println("[MAIN] Launching serialReader thread.");
+    xTaskCreate(serialReader,"serialReader", 2000, NULL, 1, NULL); // prioridade 2
     //
 
     /*Serial.println("[MAIN] Launching dataStorager thread.");
@@ -154,7 +231,7 @@ void setup()
     Serial.println("[MAIN] Waiting for client data.");
 }
 /// Função utilizada normalmente quando o propósito do código não é RTOS.
-void loop()
-{
-    /* */
-}
+void loop()   
+{  
+  /* */
+}  

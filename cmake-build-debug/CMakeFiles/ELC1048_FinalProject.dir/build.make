@@ -44,19 +44,19 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /opt/clion-2021.2/bin/cmake/linux/bin/cmake
+CMAKE_COMMAND = /snap/clion/162/bin/cmake/linux/bin/cmake
 
 # The command to remove a file.
-RM = /opt/clion-2021.2/bin/cmake/linux/bin/cmake -E rm -f
+RM = /snap/clion/162/bin/cmake/linux/bin/cmake -E rm -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/cristian/Desktop/ELC1048_FinalProject
+CMAKE_SOURCE_DIR = /home/cristian/CLionProjects/ELC1048_FinalProject
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug
+CMAKE_BINARY_DIR = /home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug
 
 # Include any dependencies generated for this target.
 include CMakeFiles/ELC1048_FinalProject.dir/depend.make
@@ -71,6 +71,6 @@ CMakeFiles/ELC1048_FinalProject.dir/clean:
 .PHONY : CMakeFiles/ELC1048_FinalProject.dir/clean
 
 CMakeFiles/ELC1048_FinalProject.dir/depend:
-	cd /home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/cristian/Desktop/ELC1048_FinalProject /home/cristian/Desktop/ELC1048_FinalProject /home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug /home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug /home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/CMakeFiles/ELC1048_FinalProject.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/cristian/CLionProjects/ELC1048_FinalProject /home/cristian/CLionProjects/ELC1048_FinalProject /home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug /home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug /home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/CMakeFiles/ELC1048_FinalProject.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/ELC1048_FinalProject.dir/depend
 

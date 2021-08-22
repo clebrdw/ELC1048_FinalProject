@@ -1,6 +1,19 @@
-/opt/clion-2021.2/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_DEPENDS_USE_COMPILER=FALSE -G "CodeBlocks - Unix Makefiles" /home/cristian/Desktop/ELC1048_FinalProject
+/snap/clion/162/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_DEPENDS_USE_COMPILER=FALSE -G "CodeBlocks - Unix Makefiles" /home/cristian/CLionProjects/ELC1048_FinalProject
+-- The C compiler identification is GNU 9.3.0
+-- The CXX compiler identification is GNU 9.3.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
 -- Configuring done
 CMake Error: Cannot determine link language for target "ELC1048_FinalProject".
 CMake Error: CMake can not determine linker language for target: ELC1048_FinalProject
 -- Generating done
 CMake Generate step failed.  Build files cannot be regenerated correctly.
+Unable to determine product file path for target ELC1048_FinalProject. Running and debugging will be unavailable.

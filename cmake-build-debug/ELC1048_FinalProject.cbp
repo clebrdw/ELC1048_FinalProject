@@ -8,49 +8,49 @@
 		<Option virtualFolders="CMake Files\;"/>
 		<Build>
 			<Target title="all">
-				<Option working_dir="/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug"/>
+				<Option working_dir="/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
-					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="rebuild_cache">
-				<Option working_dir="/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug"/>
+				<Option working_dir="/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
-					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="edit_cache">
-				<Option working_dir="/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug"/>
+				<Option working_dir="/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
-					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="ELC1048_FinalProject">
-				<Option output="/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/ELC1048_FinalProject" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir="/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug"/>
+				<Option output="/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/ELC1048_FinalProject" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug"/>
 				<Option object_output="./"/>
 				<Option type="1"/>
 				<Option compiler="gcc"/>
 				<Compiler>
-					<Add directory="/home/cristian/Desktop/ELC1048_FinalProject/."/>
-					<Add directory="/home/cristian/Desktop/ELC1048_FinalProject/dev"/>
-					<Add directory="/home/cristian/Desktop/ELC1048_FinalProject/dev/ESP32_FreeRTOS"/>
-					<Add directory="/home/cristian/Desktop/ELC1048_FinalProject/dev/LoRaMultipleCommunicationInterrupt"/>
-					<Add directory="/home/cristian/Desktop/ELC1048_FinalProject/dist"/>
-					<Add directory="/home/cristian/Desktop/ELC1048_FinalProject/dist/lora_client"/>
-					<Add directory="/home/cristian/Desktop/ELC1048_FinalProject/dist/lora_server"/>
+					<Add directory="/home/cristian/CLionProjects/ELC1048_FinalProject/."/>
+					<Add directory="/home/cristian/CLionProjects/ELC1048_FinalProject/dev"/>
+					<Add directory="/home/cristian/CLionProjects/ELC1048_FinalProject/dev/ESP32_FreeRTOS"/>
+					<Add directory="/home/cristian/CLionProjects/ELC1048_FinalProject/dev/LoRaMultipleCommunicationInterrupt"/>
+					<Add directory="/home/cristian/CLionProjects/ELC1048_FinalProject/dist"/>
+					<Add directory="/home/cristian/CLionProjects/ELC1048_FinalProject/dist/lora_client"/>
+					<Add directory="/home/cristian/CLionProjects/ELC1048_FinalProject/dist/lora_server"/>
 					<Add directory="/usr/include/c++/9"/>
 					<Add directory="/usr/include/x86_64-linux-gnu/c++/9"/>
 					<Add directory="/usr/include/c++/9/backward"/>
@@ -60,26 +60,26 @@
 					<Add directory="/usr/include"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 ELC1048_FinalProject"/>
-					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 ELC1048_FinalProject"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="ELC1048_FinalProject/fast">
-				<Option output="/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/ELC1048_FinalProject" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir="/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug"/>
+				<Option output="/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/ELC1048_FinalProject" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug"/>
 				<Option object_output="./"/>
 				<Option type="1"/>
 				<Option compiler="gcc"/>
 				<Compiler>
-					<Add directory="/home/cristian/Desktop/ELC1048_FinalProject/."/>
-					<Add directory="/home/cristian/Desktop/ELC1048_FinalProject/dev"/>
-					<Add directory="/home/cristian/Desktop/ELC1048_FinalProject/dev/ESP32_FreeRTOS"/>
-					<Add directory="/home/cristian/Desktop/ELC1048_FinalProject/dev/LoRaMultipleCommunicationInterrupt"/>
-					<Add directory="/home/cristian/Desktop/ELC1048_FinalProject/dist"/>
-					<Add directory="/home/cristian/Desktop/ELC1048_FinalProject/dist/lora_client"/>
-					<Add directory="/home/cristian/Desktop/ELC1048_FinalProject/dist/lora_server"/>
+					<Add directory="/home/cristian/CLionProjects/ELC1048_FinalProject/."/>
+					<Add directory="/home/cristian/CLionProjects/ELC1048_FinalProject/dev"/>
+					<Add directory="/home/cristian/CLionProjects/ELC1048_FinalProject/dev/ESP32_FreeRTOS"/>
+					<Add directory="/home/cristian/CLionProjects/ELC1048_FinalProject/dev/LoRaMultipleCommunicationInterrupt"/>
+					<Add directory="/home/cristian/CLionProjects/ELC1048_FinalProject/dist"/>
+					<Add directory="/home/cristian/CLionProjects/ELC1048_FinalProject/dist/lora_client"/>
+					<Add directory="/home/cristian/CLionProjects/ELC1048_FinalProject/dist/lora_server"/>
 					<Add directory="/usr/include/c++/9"/>
 					<Add directory="/usr/include/x86_64-linux-gnu/c++/9"/>
 					<Add directory="/usr/include/c++/9/backward"/>
@@ -89,29 +89,29 @@
 					<Add directory="/usr/include"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 ELC1048_FinalProject/fast"/>
-					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j4 -f &quot;/home/cristian/Desktop/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 ELC1048_FinalProject/fast"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/cristian/CLionProjects/ELC1048_FinalProject/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 		</Build>
-		<Unit filename="/home/cristian/Desktop/ELC1048_FinalProject/dev/ESP32_FreeRTOS/ESP32_FreeRTOS.ino">
+		<Unit filename="/home/cristian/CLionProjects/ELC1048_FinalProject/dev/ESP32_FreeRTOS/ESP32_FreeRTOS.ino">
 			<Option target="ELC1048_FinalProject"/>
 		</Unit>
-		<Unit filename="/home/cristian/Desktop/ELC1048_FinalProject/dev/LoRaMultipleCommunicationInterrupt/LoRaMultipleCommunicationInterrupt.ino">
+		<Unit filename="/home/cristian/CLionProjects/ELC1048_FinalProject/dev/LoRaMultipleCommunicationInterrupt/LoRaMultipleCommunicationInterrupt.ino">
 			<Option target="ELC1048_FinalProject"/>
 		</Unit>
-		<Unit filename="/home/cristian/Desktop/ELC1048_FinalProject/dist/lora_client/lora_client.ino">
+		<Unit filename="/home/cristian/CLionProjects/ELC1048_FinalProject/dist/lora_client/lora_client.ino">
 			<Option target="ELC1048_FinalProject"/>
 		</Unit>
-		<Unit filename="/home/cristian/Desktop/ELC1048_FinalProject/dist/lora_server/lora_server.ino">
+		<Unit filename="/home/cristian/CLionProjects/ELC1048_FinalProject/dist/lora_server/lora_server.ino">
 			<Option target="ELC1048_FinalProject"/>
 		</Unit>
-		<Unit filename="/home/cristian/Desktop/ELC1048_FinalProject/sensor.ino">
+		<Unit filename="/home/cristian/CLionProjects/ELC1048_FinalProject/sensor.ino">
 			<Option target="ELC1048_FinalProject"/>
 		</Unit>
-		<Unit filename="/home/cristian/Desktop/ELC1048_FinalProject/CMakeLists.txt">
+		<Unit filename="/home/cristian/CLionProjects/ELC1048_FinalProject/CMakeLists.txt">
 			<Option virtualFolder="CMake Files\"/>
 		</Unit>
 	</Project>
