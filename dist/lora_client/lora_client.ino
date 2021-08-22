@@ -176,40 +176,42 @@ void telemetryActionReceiver(int packetSize)
         xSemaphoreGive(telemetryService.mutex);
     }
 
-    if(xSemaphoreTake(electricalRelay.mutex, portMAX_DELAY) == pdTRUE)
+    Serial.println("[actionReceiver] Received: " + telemetryService.inBuffer);
+
+    /*if(xSemaphoreTake(electricalRelay.mutex, portMAX_DELAY) == pdTRUE)
     {
         motorConfigStruct newConfig;
 
         if(telemetryService.inBuffer.equals("1")) // aguardar
         {
-            printf("[actionReceiver] Received: wait.\n");
+            Serial.println("[actionReceiver] Received: wait.");
         }
         else if(telemetryService.inBuffer.equals("2")) // ligar (sem limite)
         {
             newConfig.status = true;
             newConfig.current = -1;
             electricalMotor.config = newConfig;
-            printf("[actionReceiver] Received: turn on.\n");
+            Serial.println("[actionReceiver] Received: turn on.");
         }
         else if(telemetryService.inBuffer.equals("3")) // manter
         {
             newConfig.status = true;
             newConfig.current = 5; // receber valor por socket
             electricalMotor.config = newConfig;
-            printf("[actionReceiver] Received: keep on %dA.\n", 5);
+            Serial.println("[actionReceiver] Received: keep on 5A.");
         }
         else if(telemetryService.inBuffer.equals("0")) // desligar
         {
             newConfig.status = false;
             newConfig.current = 0;
             electricalMotor.config = newConfig;
-            printf("[actionReceiver] Received: turn off.\n");
+            Serial.println("[actionReceiver] Received: turn off.");
         }
         else
-            printf("[actionReceiver] Received: unknown.\n");
+            Serial.println("[actionReceiver] Received: unknown.");
 
         xSemaphoreGive(electricalRelay.mutex);
-    }
+    }*/
 }
 /// Função que cria uma thread que verifica se o valor atual é diferente etc
 void electricalRelayControl(void * parameters) 

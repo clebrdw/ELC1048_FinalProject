@@ -43,24 +43,27 @@ void telemetryInfoReceiver(int packetSize)
 
     if(xSemaphoreTake(telemetryService.mutex, portMAX_DELAY) == pdTRUE)
     {
-        telemetryService.inBuffer = "";
-        int recipient = LoRa.read();
-        //byte sender = LoRa.read();
+        // read packet header bytes:
+        int recipient = LoRa.read();          // recipient address
+        byte sender = LoRa.read();            // sender address
+        byte incomingMsgId = LoRa.read();     // incoming msg ID
+        byte incomingLength = LoRa.read();    // incoming msg length
 
+        telemetryService.inBuffer = "";
         while (LoRa.available())
             telemetryService.inBuffer += (char)LoRa.read();
-
-        if (LoRa.read() != telemetryService.inBuffer.length())
+        
+        if (incomingLength != telemetryService.inBuffer.length())
         {
             Serial.println("[telemetryReceiver] ERROR: message lengths doesn't match.");
-            return;
+            goto libera;
         }
 
         // if the recipient isn't this device or broadcast,
         if (recipient != localAddress)
         {
             Serial.println("[telemetryReceiver] ERROR: this message isn't for me.");
-            return;
+            goto libera;
         }
 
         Serial.println("[telemetryReceiver] Received: " + telemetryService.inBuffer);
@@ -68,7 +71,7 @@ void telemetryInfoReceiver(int packetSize)
         /*
         Serial.print("[RECEIVED] From 0x" + String(sender, HEX));
         Serial.println(" to 0x" + String(recipient, HEX));
-        Serial.println(" - ID: " + String(sender));
+        Serial.println(" - ID: " + String(incomingMsgId));
         Serial.println(" : " + telemetryService.inBuffer);
          */
 
@@ -85,26 +88,26 @@ void telemetryInfoReceiver(int packetSize)
             xSemaphoreGive(currentSensor.mutex);
         }*/
 
-        aux++;
+        /*aux++;
         if(aux == 10)
         {
             telemetryService.outBuffer = "1";
-            printf("[actionSender] Sent: wait.\n");
+            printf("[actionSender] Sending: wait.\n");
         }
         else if(aux == 20)
         {
             telemetryService.outBuffer = "2";
-            printf("[actionSender] Sent: turn on.\n");
+            printf("[actionSender] Sending: turn on.\n");
         }
         else if(aux == 30)
         {
             telemetryService.outBuffer = "3";
-            printf("[actionSender] Sent: keep on %dA.\n", 5);
+            printf("[actionSender] Sending: keep on %dA.\n", 5);
         }
         else if(aux == 40)
         {
             telemetryService.outBuffer = "0";
-            printf("[actionSender] Sent: turn off.\n");
+            printf("[actionSender] Sending: turn off.\n");
             aux=0;
         }
 
@@ -119,8 +122,9 @@ void telemetryInfoReceiver(int packetSize)
 
         LoRa.receive(); // coloca o LoRa em modo listening novamente
 
-        Serial.println("[actionSender] Sent: " + telemetryService.outBuffer);
+        Serial.println("[actionSender] Command sent successfully: " + telemetryService.outBuffer);*/
 
+        libera:
         xSemaphoreGive(telemetryService.mutex);
     }
 }
@@ -142,8 +146,8 @@ void setup()
     telemetryService.msgCount = 0;
     //
 
-    Serial.println("[MAIN] Launching dataStorager thread.");
-    xTaskCreate(currentSensorReader,"dataStorager", 2000, NULL, 1, NULL); // prioridade 2
+    /*Serial.println("[MAIN] Launching dataStorager thread.");
+    xTaskCreate(currentSensorReader,"dataStorager", 2000, NULL, 1, NULL); // prioridade 2*/
 
     Serial.println("[MAIN] Waiting for client data.");
 }
