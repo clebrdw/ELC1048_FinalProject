@@ -5,6 +5,7 @@
 * @link https://github.com/CristianAugusto/ELC1048_FinalProject
 * @date 08-2021
 */
+
 #include "heltec.h"
 
 /// MACRO de tempo de espera para tentar novamente o semáforo
