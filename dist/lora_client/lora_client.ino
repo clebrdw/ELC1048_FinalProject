@@ -9,7 +9,9 @@
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
 
-LiquidCrystal_I2C lcd(0x3F, 2,1,0,4,5,6,7,3, POSITIVE); 
+LiquidCrystal_I2C displayLCD(0x3F, 2,1,0,4,5,6,7,3, POSITIVE); 
+
+enum State { WAIT, TURN_ON, KEEP_ON, TURN_OFF };
 
 /// MACRO de tempo de espera para tentar novamente o semáforo
 #define WAIT_TICKS 3
@@ -42,7 +44,7 @@ typedef struct
 {
     bool status;
     long current;
-
+    State state;
 } motorConfigStruct;
 
 /// electricalRelay
@@ -146,7 +148,7 @@ void telemetryInfoSender(void * parameters)
 
             xSemaphoreGive(telemetryService.mutex);
         }
-        vTaskDelay(1500/ portTICK_PERIOD_MS); // ~2000ms // 2s ->(1.5seg + 0.5seg de atraso LoRa) 
+        vTaskDelay(2500/ portTICK_PERIOD_MS); // ~2000ms // 2s ->(1.5seg + 0.5seg de atraso LoRa) 
     }
 }
 
@@ -207,25 +209,33 @@ void telemetryActionReceiver(int packetSize)
 
     //Serial.println("[actionReceiver] Received: '" + telemetryService.inBuffer);
 
+    // comparar estado atual com novo, não atualizar caso seja igual
+
     if(xSemaphoreTake(electricalRelay.mutex, portMAX_DELAY) == pdTRUE)
     {
         motorConfigStruct newConfig;
 
         if(tmp[0].equals("1")) // aguardar
         {
+            newConfig.status = false;
+            newConfig.current = 0;
+            newConfig.state = WAIT;
+            electricalMotor.config = newConfig;
             Serial.println("[actionReceiver] Received: wait");
         }
         else if(tmp[0].equals("2")) // ligar (sem limite)
         {
             newConfig.status = true;
             newConfig.current = -1;
+            newConfig.state = TURN_ON;
             electricalMotor.config = newConfig;
             Serial.println("[actionReceiver] Received: turn on");
         }
-        else if(tmp[0].equals("3")) // manter
+        else if(tmp[0].equals("3")) // manter em
         {
             newConfig.status = true;
             newConfig.current = tmp[1].toInt(); // receber valor por socket
+            newConfig.state = KEEP_ON;
             electricalMotor.config = newConfig;
             Serial.println("[actionReceiver] Received: keep on " + tmp[1] + "A");
         }
@@ -233,6 +243,7 @@ void telemetryActionReceiver(int packetSize)
         {
             newConfig.status = false;
             newConfig.current = 0;
+            newConfig.state = TURN_OFF;
             electricalMotor.config = newConfig;
             Serial.println("[actionReceiver] Received: turn off");
         }
@@ -273,12 +284,61 @@ void electricalRelayControl(void * parameters)
     }
 }
 
+void displayControl(void * parameters) 
+{
+    for(;;)
+    {
+        String leituraTmp = "";
+        if(xSemaphoreTake(currentSensor.mutex, portMAX_DELAY) == pdTRUE)
+        {
+            leituraTmp = (String)currentSensor.leitura;
+            
+            xSemaphoreGive(currentSensor.mutex);
+        }
+
+        if(xSemaphoreTake(telemetryService.mutex, portMAX_DELAY) == pdTRUE)
+        {
+            Wire.setClock(10000);
+            
+            displayLCD.clear();
+            displayLCD.setCursor(0,0);
+            displayLCD.print("CURRENT: ");
+            displayLCD.print(leituraTmp + "A");
+            displayLCD.setCursor(0,1);
+            displayLCD.print("STATE: ");
+            
+            switch (electricalMotor.config.state)
+            {
+                case WAIT:
+                    displayLCD.print("WAIT");
+                    break;
+                case TURN_ON:
+                    displayLCD.print("TURN ON");
+                    break;
+                case KEEP_ON:
+                    displayLCD.print("KEEP ON" + leituraTmp + "A");
+                    break;
+                case TURN_OFF:
+                    displayLCD.print("TURN OFF");
+                    break;
+                default:
+                    displayLCD.print("UNKNOWN");
+                    break;
+            }
+            xSemaphoreGive(telemetryService.mutex);
+        }
+        vTaskDelay(1000/ portTICK_PERIOD_MS); // 1000ms / 1s
+    }
+}
+
 /// Função que executa apenas uma vez e sempre que o microcontrolador é ligado.
 void setup()
 {
     Heltec.begin(false /*DisplayEnable Enable*/, true /*Heltec.LoRa Enable*/, true /*Serial Enable*/, true /*PABOOST Enable*/, 915E6 /*long BAND*/);
 
-    lcd.begin(16,2);
+    Wire.setClock(10000);
+
+    displayLCD.begin(16, 2); /* comprimento, altura */
 
     pinMode(LED_PIN, OUTPUT); // led
 
@@ -299,6 +359,7 @@ void setup()
     //
     electricalMotor.config.status = false;
     electricalMotor.config.current = 0;
+    electricalMotor.config.state = WAIT;
     //
     electricalRelay.mutex = xSemaphoreCreateMutex();
     electricalRelay.status = false;
@@ -313,6 +374,9 @@ void setup()
     Serial.println("[MAIN] Launching electricalRelayControl thread.");
     xTaskCreate(electricalRelayControl,"electricalRelayControl", 2000, NULL, 3, NULL); // prioridade 3
 
+    Serial.println("[MAIN] Launching displayControl thread.");
+    xTaskCreate(displayControl,"displayControl", 2000, NULL, 3, NULL); // prioridade 3
+
     Serial.println("[MAIN] Waiting for server command.");
 
     /*xTaskCreate(task1,"Teste 1", 2000, NULL, 2, NULL);
@@ -322,10 +386,4 @@ void setup()
 void loop()
 {
     /* */
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print((String)currentSensor.leitura);
-    lcd.setCursor(0,1);
-    lcd.print("Modulo I2C");
-    delay(1000);
 }
