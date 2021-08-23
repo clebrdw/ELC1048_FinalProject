@@ -14,7 +14,7 @@ LiquidCrystal_I2C displayLCD(0x3F, 2,1,0,4,5,6,7,3, POSITIVE);
 enum State { WAIT, TURN_ON, KEEP_ON, TURN_OFF };
 
 /// MACRO de tempo de espera para tentar novamente o semáforo
-#define WAIT_TICKS 3
+#define WAIT_TICKS 100
 
 #define LED_PIN 32
 
@@ -133,6 +133,10 @@ void telemetryInfoSender(void * parameters)
 
         if(xSemaphoreTake(telemetryService.mutex, portMAX_DELAY) == pdTRUE)
         {
+            int aux;
+            while((aux++) < 1000) {}
+            aux=0;
+          
             LoRa.beginPacket();                                 // start packet
             LoRa.write(serverAddress);                          // add serverAddress address
             LoRa.write(localAddress);                           // add sender address
@@ -145,10 +149,14 @@ void telemetryInfoSender(void * parameters)
             LoRa.receive(); // coloca o LoRa em modo listening novamente
 
             Serial.println("[telemetrySender] Sent: " + telemetryService.outBuffer + "A");
-
+        
+            while((aux++) < 1000) {}
+            aux=0;
+            
             xSemaphoreGive(telemetryService.mutex);
         }
-        vTaskDelay(2500/ portTICK_PERIOD_MS); // ~2000ms // 2s ->(1.5seg + 0.5seg de atraso LoRa) 
+        
+        vTaskDelay(1500/ portTICK_PERIOD_MS); // ~2000ms // 2s ->(1.5seg + 0.5seg de atraso LoRa) 
     }
 }
 
@@ -266,7 +274,6 @@ void electricalRelayControl(void * parameters)
     {
         if(xSemaphoreTake(electricalRelay.mutex, portMAX_DELAY) == pdTRUE)
         {
-
             if(electricalMotor.config.status && (electricalMotor.config.current > currentSensor.leitura || electricalMotor.config.current == -1))
             {
                 electricalRelay.status = true;
@@ -289,45 +296,56 @@ void displayControl(void * parameters)
     for(;;)
     {
         String leituraTmp = "";
-        if(xSemaphoreTake(currentSensor.mutex, portMAX_DELAY) == pdTRUE)
+        if( xSemaphoreTake(currentSensor.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
         {
             leituraTmp = (String)currentSensor.leitura;
             
             xSemaphoreGive(currentSensor.mutex);
         }
 
-        if(xSemaphoreTake(telemetryService.mutex, portMAX_DELAY) == pdTRUE)
+        if(!leituraTmp.equals(""))
         {
-            Wire.setClock(10000);
-            
-            displayLCD.clear();
-            displayLCD.setCursor(0,0);
-            displayLCD.print("CURRENT: ");
-            displayLCD.print(leituraTmp + "A");
-            displayLCD.setCursor(0,1);
-            displayLCD.print("STATE: ");
-            
-            switch (electricalMotor.config.state)
+            if(xSemaphoreTake(telemetryService.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE && xSemaphoreTake(electricalRelay.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
             {
-                case WAIT:
-                    displayLCD.print("WAIT");
-                    break;
-                case TURN_ON:
-                    displayLCD.print("TURN ON");
-                    break;
-                case KEEP_ON:
-                    displayLCD.print("KEEP ON" + leituraTmp + "A");
-                    break;
-                case TURN_OFF:
-                    displayLCD.print("TURN OFF");
-                    break;
-                default:
-                    displayLCD.print("UNKNOWN");
-                    break;
+                displayLCD.clear();
+                displayLCD.setCursor(0,0);
+                displayLCD.print(leituraTmp + "A");
+                displayLCD.setCursor(0,1);
+
+                switch (electricalMotor.config.state)
+                {
+                    case WAIT:
+                        displayLCD.print("WAIT");
+                        break;
+                    case TURN_ON:
+                        displayLCD.print("TURN ON");
+                        break;
+                    case KEEP_ON:
+                        displayLCD.print("KEEP ON " + (String)electricalMotor.config.current + "A");
+                        break;
+                    case TURN_OFF:
+                        displayLCD.print("TURN OFF");
+                        break;
+                    default:
+                        displayLCD.print("UNKNOWN");
+                        break;
+                }
+
+                xSemaphoreGive(electricalRelay.mutex);
+                xSemaphoreGive(telemetryService.mutex);
             }
-            xSemaphoreGive(telemetryService.mutex);
         }
         vTaskDelay(1000/ portTICK_PERIOD_MS); // 1000ms / 1s
+    }
+}
+
+void refreshI2CClock(void * parameters) 
+{
+    for(;;)
+    {
+        Wire.setClock(10000); // frequência do I2C diminuida para minimizar o problema de baixa tensão provocado pelo LoRa (o padrão é 100000Hz)
+
+        vTaskDelay(5000/ portTICK_PERIOD_MS); // 5000ms / 5s
     }
 }
 
@@ -376,6 +394,10 @@ void setup()
 
     Serial.println("[MAIN] Launching displayControl thread.");
     xTaskCreate(displayControl,"displayControl", 2000, NULL, 3, NULL); // prioridade 3
+
+    Serial.println("[MAIN] Launching refreshI2CClock thread.");
+    xTaskCreate(refreshI2CClock,"refreshI2CClock", 1000, NULL, 1, NULL); // prioridade 3
+
 
     Serial.println("[MAIN] Waiting for server command.");
 
