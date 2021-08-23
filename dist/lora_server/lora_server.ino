@@ -207,6 +207,9 @@ void salvaDados(void * parameters)
     {
         if( xSemaphoreTake(telemetryService.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
         {
+            
+            // Declara variavel do tipo File
+            File myFile;
             // Abre o arquivo para adicionar algo
             myFile = SD.open("/data_sensor.txt", FILE_APPEND);
             // Adiciona algo
