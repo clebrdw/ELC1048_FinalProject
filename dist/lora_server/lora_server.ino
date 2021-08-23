@@ -7,6 +7,9 @@
 */
 
 #include "heltec.h"
+#include "FS.h"
+#include "SD.h"
+#include "SPI.h"
 
 /// MACRO de tempo de espera para tentar novamente o semáforo
 #define WAIT_TICKS 3
@@ -197,6 +200,25 @@ void serialReader(void * parameters)
         vTaskDelay(10/ portTICK_PERIOD_MS); // 10ms
     }
 }
+/// Função que armazena os dados recebidos no Cartão de Memória
+void salvaDados(void * parameters)
+{
+    for(;;)
+    {
+        if( xSemaphoreTake(telemetryService.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
+        {
+            // Abre o arquivo para adicionar algo
+            myFile = SD.open("/data_sensor.txt", FILE_APPEND);
+            // Adiciona algo
+            myFile.print((String)telemetryService.inBuffer);
+            // Fecha o arquivo
+            myFile.close();
+
+            xSemaphoreGive(telemetryService.mutex);
+        }
+        vTaskDelay(10/ portTICK_PERIOD_MS); // 10ms
+    }
+}
 
 /// Função que executa apenas uma vez e sempre que o microcontrolador é ligado.
 void setup()
@@ -207,6 +229,19 @@ void setup()
     LoRa.onReceive(telemetryInfoReceiver);
     LoRa.receive();
     Serial.println("[MAIN] Heltec.LoRa init succeeded.");
+
+
+    if(!SD.begin()){
+        Serial.println("Card Mount Failed");
+        return;
+    }
+    // Declara variavel do tipo File
+    File myFile;
+    // Cria o arquivo data_sensor.txt
+    myFile = SD.open("/data_sensor.txt", FILE_WRITE);
+    // Fecha o arquivo
+    myFile.close();
+
 
     //
     telemetryService.mutex = xSemaphoreCreateMutex();
@@ -225,6 +260,9 @@ void setup()
     Serial.println("[MAIN] Launching serialReader thread.");
     xTaskCreate(serialReader,"serialReader", 2000, NULL, 1, NULL); // prioridade 2
     //
+
+    // Cria a task para salvar os dados no Cartao de Memoria
+    xTaskCreate(salvaDados,"salvaDados", 2000, NULL, 3, NULL); // prioridade 3
 
     /*Serial.println("[MAIN] Launching dataStorager thread.");
     xTaskCreate(currentSensorReader,"dataStorager", 2000, NULL, 1, NULL); // prioridade 2*/
