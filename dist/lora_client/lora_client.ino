@@ -240,7 +240,7 @@ void telemetryActionReceiver(int packetSize)
             electricalMotor.config = newConfig;
             Serial.println("[actionReceiver] Received: wait");
         }
-        else if(splitter[0].equals("2")) // ligar (sem limite)
+        else if(splitter[0].equals("2")) // ligar (sem limite definido)
         {
             newConfig.status = true;
             newConfig.current = -1;
@@ -345,6 +345,8 @@ void displayControl(void * parameters)
             {
                 if(xSemaphoreTake(telemetryService.mutex, portMAX_DELAY) == pdTRUE) // evita que o LoRa trabalhe ao mesmo tempo, que causa problemas no I2C devido à queda de tensão
                 {
+                    Wire.setClock(1000); // Forçar clock I2C para manter seu funcionamento correto
+                  
                     displayLCD.clear();
                     displayLCD.setCursor(0,0);
                     displayLCD.print(displayStruct.leituraBuffer + "A");
@@ -362,24 +364,11 @@ void displayControl(void * parameters)
     }
 }
 
-/// 
-void refreshI2C(void * parameters) 
-{
-    for(;;)
-    {
-        Wire.setClock(1000);
-        
-        vTaskDelay(3000/ portTICK_PERIOD_MS); // 3000ms / 3s
-    }
-}
-
 /// Função que executa apenas uma vez e sempre que o microcontrolador é ligado.
 void setup()
 {
     Heltec.begin(false /*DisplayEnable Enable*/, true /*Heltec.LoRa Enable*/, true /*Serial Enable*/, false /*PABOOST Enable*/, 915E6 /*long BAND*/); // desativar PABOOST para reduzir consumo
 
-    Wire.setClock(1000); // Forçar clock I2C para manter seu funcionamento correto
-    
     displayLCD.begin(16, 2); // (comprimento, altura) do display LCD
 
     pinMode(LED_PIN, OUTPUT); // Electrical Relay simulator's LED
@@ -423,9 +412,6 @@ void setup()
 
     Serial.println("[MAIN] Launching displayControl thread.");
     xTaskCreate(displayControl,"displayControl", 2000, NULL, 3, NULL); // prioridade 3
-
-    Serial.println("[MAIN] Launching refreshI2C thread.");
-    xTaskCreate(refreshI2C,"refreshI2C", 1000, NULL, 1, NULL); // prioridade 1
 
     Serial.println("[MAIN] Waiting for server command.\n");
 }

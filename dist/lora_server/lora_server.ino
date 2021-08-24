@@ -16,6 +16,8 @@
 #define SD_MOSI 12
 #define SD_MISO 13
 
+File MicroSDcard;
+
 /// MACRO de tempo de espera para tentar novamente o semáforo
 #define WAIT_TICKS 3
 
@@ -41,8 +43,8 @@ typedef struct
 typedef struct
 {
     SemaphoreHandle_t mutex;
-    double leitura;
-    double samples[100];
+    String buffer;
+    double samples[10];
     int index;
 } dataStorageStruct;
 
@@ -65,14 +67,20 @@ void telemetryInfoReceiver(int packetSize)
         telemetryService.inBuffer = "";
         while (LoRa.available())
             telemetryService.inBuffer += (char)LoRa.read();
-        
+
+        if(xSemaphoreTake(dataStorage.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
+        {
+            dataStorage.samples[++dataStorage.index] = telemetryService.inBuffer;
+
+            xSemaphoreGive(dataStorage.mutex);
+        }
+
         if (incomingLength != telemetryService.inBuffer.length())
         {
             Serial.println("[telemetryReceiver] ERROR: message lengths doesn't match.");
             goto libera;
         }
 
-        // if the destination isn't this device or broadcast,
         if (destination != localAddress)
         {
             Serial.println("[telemetryReceiver] ERROR: this message isn't for me.");
@@ -84,7 +92,7 @@ void telemetryInfoReceiver(int packetSize)
         libera:
         xSemaphoreGive(telemetryService.mutex);
         
-        LoRa.receive();
+        LoRa.receive(); // coloca o LoRa em modo listening novamente
     }
 }
 
@@ -94,22 +102,8 @@ void telemetryActionSender(void * parameters)
     {
         if( xSemaphoreTake(telemetryService.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
         {
-            if(telemetryService.inBuffer != "-1")
+            if(telemetryService.inBuffer != "-1") // Verifica se existe leitura para processar
             {
-                // enviar comando como retorno
-        
-                // aumentar velocidade  -> status = 1, speed = x
-                // diminuir velocidade  -> status = 1, speed = x
-                // desligar             -> status = 0, speed = 0
-        
-                /*if(xSemaphoreTake(currentSensor.mutex, portMAX_DELAY) == pdTRUE)
-                {
-                    telemetryService.outBuffer = (String)currentSensor.leitura;
-        
-                    xSemaphoreGive(currentSensor.mutex);
-                }*/
-
-                //telemetryService.inBuffer
                 if(serialService.inBuffer.equals(""))
                 {
                     telemetryService.outBuffer = "0;0";
@@ -117,6 +111,7 @@ void telemetryActionSender(void * parameters)
                 }
                 else
                 {
+                    /// Dividindo as informações da string em variáveis
                     char buf[sizeof(telemetryService.inBuffer)];
                     String tmp[2];
                     int i = 0;
@@ -128,22 +123,22 @@ void telemetryActionSender(void * parameters)
                         tmp[i++] = str;
                     }
 
-                    if(tmp[0].equals("1"))
+                    if(tmp[0].equals("1")) // aguardar
                     {
                         telemetryService.outBuffer = serialService.inBuffer;
                         Serial.println("[actionSender] Sending: wait");
                     }
-                    else if(tmp[0].equals("2"))
+                    else if(tmp[0].equals("2")) // ligar (sem limite definido)
                     {
                         telemetryService.outBuffer = serialService.inBuffer;
                         Serial.println("[actionSender] Sending: turn on");
                     }
-                    else if(tmp[0].equals("3"))
+                    else if(tmp[0].equals("3")) // manter em xA
                     {
                         telemetryService.outBuffer = serialService.inBuffer;
                         Serial.println("[actionSender] Sending: keep on " + tmp[1] + "A");
                     }
-                    else if(tmp[0].equals("4"))
+                    else if(tmp[0].equals("4")) // desligar
                     {
                         telemetryService.outBuffer = serialService.inBuffer;
                         Serial.println("[actionSender] Sending: turn off");
@@ -157,11 +152,11 @@ void telemetryActionSender(void * parameters)
         
                 LoRa.beginPacket();                                 // start packet
                 LoRa.write(clientAddress);                          // add clientAddress address
-                LoRa.write(telemetryService.outBuffer.length());     // add payload length
-                LoRa.print(telemetryService.outBuffer);              // add payload
+                LoRa.write(telemetryService.outBuffer.length());    // add payload length
+                LoRa.print(telemetryService.outBuffer);             // add payload
                 LoRa.endPacket();                                   // finish packet and send it
 
-                telemetryService.inBuffer = "-1";
+                telemetryService.inBuffer = "-1"; // sinaliza que a leitura foi processada
 
                 Serial.println("[actionSender] Command sent successfully.");
 
@@ -169,10 +164,9 @@ void telemetryActionSender(void * parameters)
                  
                 LoRa.receive(); // coloca o LoRa em modo listening novamente
             }
-
             xSemaphoreGive(telemetryService.mutex);
         }
-        vTaskDelay(100/ portTICK_PERIOD_MS); // 100ms
+        vTaskDelay(200/ portTICK_PERIOD_MS); // 200ms
     }
 }
 
@@ -193,25 +187,36 @@ void serialReader(void * parameters)
     }
 }
 /// Função que armazena os dados recebidos no Cartão de Memória
-void salvaDados(void * parameters)
+void dataLogging(void * parameters)
 {
     for(;;)
     {
-        if( xSemaphoreTake(telemetryService.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
+        if(xSemaphoreTake(dataStorage.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
         {
-            
-            // Declara variavel do tipo File
-            File myFile;
-            // Abre o arquivo para adicionar algo
-            myFile = SD.open("/data_sensor.txt", FILE_APPEND);
-            // Adiciona algo
-            myFile.print((String)telemetryService.inBuffer);
-            // Fecha o arquivo
-            myFile.close();
+            while(dataStorage.index >= 0) // Armazena todas as leituras disponíveis em uma única string
+            {
+                dataStorage.buffer += dataStorage.samples[dataStorage.index--] + ", ";
+            }
+            if(!dataStorage.buffer.equals(""))
+            {
+                #if 0
+                    // Abre o arquivo para adicionar algo
+                    MicroSDcard = SD.open("/data_sensor.txt", FILE_APPEND);
+                    // Adiciona algo
+                    myFile.print(dataStorage.buffer);
+                    // Fecha o arquivo
+                    myFile.close();
+                #endif
 
-            xSemaphoreGive(telemetryService.mutex);
+                #if 1
+                    for(int i=0; i<1000; i++){ } // Simula escrita no cartão SD
+                #endif
+
+                dataStorage.buffer = ""; // reseta buffer
+            }
+            xSemaphoreGive(dataStorage.mutex);
         }
-        vTaskDelay(10/ portTICK_PERIOD_MS); // 10ms
+        vTaskDelay(1000/ portTICK_PERIOD_MS); // 1000ms
     }
 }
 
@@ -233,40 +238,26 @@ void setup()
     else
         Serial.println("[MAIN] MicroSD card mounting succeeded.");
 
-    /*if(!SD.begin()){
-        Serial.println("Card Mount Failed");
-        return;
-    }
-    // Declara variavel do tipo File
-    File myFile;
-    // Cria o arquivo data_sensor.txt
-    myFile = SD.open("/data_sensor.txt", FILE_WRITE);
-    // Fecha o arquivo
-    myFile.close();*/
-
-
-    //
     telemetryService.mutex = xSemaphoreCreateMutex();
     telemetryService.outBuffer = "1"; // iniciar com wait
     telemetryService.inBuffer = "";
-    //
-    Serial.println("[MAIN] Launching telemetryActionSender thread.");
-    xTaskCreate(telemetryActionSender,"telemetryActionSender", 2000, NULL, 1, NULL); // prioridade 2
-    //
 
-    //
     serialService.mutex = xSemaphoreCreateMutex();
     serialService.inBuffer = "";
-    //
+
+    dataStorage.mutex = xSemaphoreCreateMutex();
+    dataStorage.buffer = "";
+    dataStorage.index = 0;
+
+    Serial.println("[MAIN] Launching telemetryActionSender thread.");
+    xTaskCreate(telemetryActionSender,"telemetryActionSender", 2000, NULL, 1, NULL); // prioridade 2
+
     Serial.println("[MAIN] Launching serialReader thread.");
     xTaskCreate(serialReader,"serialReader", 2000, NULL, 1, NULL); // prioridade 2
-    //
 
-    /*// Cria a task para salvar os dados no Cartao de Memoria
-    xTaskCreate(salvaDados,"salvaDados", 2000, NULL, 3, NULL); // prioridade 3*/
-
-    /*Serial.println("[MAIN] Launching dataStorager thread.");
-    xTaskCreate(currentSensorReader,"dataStorager", 2000, NULL, 1, NULL); // prioridade 2*/
+    /// Cria a task para salvar os dados no Cartao de Memoria
+    Serial.println("[MAIN] Launching dataLogging thread.");
+    xTaskCreate(dataLogging,"dataLogging", 2000, NULL, 3, NULL); // prioridade 3
 
     Serial.println("[MAIN] Waiting for client data.");
 }
