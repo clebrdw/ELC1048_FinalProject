@@ -11,6 +11,14 @@
 #include "SD.h"
 #include "SPI.h"
 
+#include <RH_RF95.h>
+#include <RHSoftwareSPI.h>
+
+#define SD_CS 23
+#define SD_SCK 17
+#define SD_MOSI 12
+#define SD_MISO 13
+
 /// MACRO de tempo de espera para tentar novamente o semáforo
 #define WAIT_TICKS 3
 
@@ -220,6 +228,13 @@ void setup()
     LoRa.receive();
     Serial.println("[MAIN] Heltec.LoRa init succeeded.");
 
+    SPIClass sd_spi(HSPI);
+    sd_spi.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
+
+    if (!SD.begin(SD_CS, sd_spi))
+        Serial.println("SD Card: mounting failed.");
+    else
+        Serial.println("SD Card: mounted.");
 
     /*if(!SD.begin()){
         Serial.println("Card Mount Failed");
