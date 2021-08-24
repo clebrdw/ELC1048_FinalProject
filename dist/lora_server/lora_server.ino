@@ -23,7 +23,6 @@ typedef struct
     SemaphoreHandle_t mutex;
     String outBuffer;
     String inBuffer;
-    byte msgCount;
 } telemetryServiceStruct;
 
 /// serialService
@@ -55,9 +54,7 @@ void telemetryInfoReceiver(int packetSize)
     {
         
         // read packet header bytes:
-        int recipient = LoRa.read();          // recipient address
-        byte sender = LoRa.read();            // sender address
-        byte incomingMsgId = LoRa.read();     // incoming msg ID
+        int destination = LoRa.read();          // destination address
         byte incomingLength = LoRa.read();    // incoming msg length
 
         telemetryService.inBuffer = "";
@@ -70,21 +67,14 @@ void telemetryInfoReceiver(int packetSize)
             goto libera;
         }
 
-        // if the recipient isn't this device or broadcast,
-        if (recipient != localAddress)
+        // if the destination isn't this device or broadcast,
+        if (destination != localAddress)
         {
             Serial.println("[telemetryReceiver] ERROR: this message isn't for me.");
             goto libera;
         }
 
         Serial.println("[telemetryReceiver] Received: " + telemetryService.inBuffer + "A");
-
-        /*
-        Serial.print("[RECEIVED] From 0x" + String(sender, HEX));
-        Serial.println(" to 0x" + String(recipient, HEX));
-        Serial.println(" - ID: " + String(incomingMsgId));
-        Serial.println(" : " + telemetryService.inBuffer);
-         */
 
         libera:
         xSemaphoreGive(telemetryService.mutex);
@@ -162,12 +152,9 @@ void telemetryActionSender(void * parameters)
         
                 LoRa.beginPacket();                                 // start packet
                 LoRa.write(clientAddress);                          // add clientAddress address
-                LoRa.write(localAddress);                           // add sender address
-                LoRa.write(telemetryService.msgCount);              // add message ID
                 LoRa.write(telemetryService.outBuffer.length());     // add payload length
                 LoRa.print(telemetryService.outBuffer);              // add payload
                 LoRa.endPacket();                                   // finish packet and send it
-                telemetryService.msgCount++;                        // increment message ID
 
                 telemetryService.inBuffer = "-1";
 
@@ -250,7 +237,6 @@ void setup()
     telemetryService.mutex = xSemaphoreCreateMutex();
     telemetryService.outBuffer = "1"; // iniciar com wait
     telemetryService.inBuffer = "";
-    telemetryService.msgCount = 0;
     //
     Serial.println("[MAIN] Launching telemetryActionSender thread.");
     xTaskCreate(telemetryActionSender,"telemetryActionSender", 2000, NULL, 1, NULL); // prioridade 2
