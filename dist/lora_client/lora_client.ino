@@ -9,7 +9,7 @@
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
 
-LiquidCrystal_I2C displayLCD(0x3F, 2,1,0,4,5,6,7,3, POSITIVE); 
+LiquidCrystal_I2C displayLCD(0x3F, 2,1,0,4,5,6,7,3, POSITIVE); // configuração do canal I2C
 
 enum State { WAIT, TURN_ON, KEEP_ON, TURN_OFF };
 
@@ -60,10 +60,21 @@ typedef struct
     motorConfigStruct config;
 } electricalMotorStruct;
 
+/// displayLCDStruct
+typedef struct 
+{
+    String current;
+    String leituraBuffer;
+    String stateBuffer;
+    String finalBuffer;
+    SemaphoreHandle_t mutex;
+} displayLCDStruct;
+
 currentSensorStruct currentSensor;
 electricalRelayStruct electricalRelay;
 telemetryServiceStruct telemetryService;
 electricalMotorStruct electricalMotor;
+displayLCDStruct displayStruct;
 
 /// Função que simula a leitura de corrente
 void currentSensorReader(void * parameters)
@@ -156,7 +167,7 @@ void telemetryInfoSender(void * parameters)
             xSemaphoreGive(telemetryService.mutex);
         }
         
-        vTaskDelay(1500/ portTICK_PERIOD_MS); // ~2000ms // 2s ->(1.5seg + 0.5seg de atraso LoRa) 
+        vTaskDelay(2500/ portTICK_PERIOD_MS); // ~2000ms // 2s ->(1.5seg + 0.5seg de atraso LoRa) 
     }
 }
 
@@ -295,43 +306,49 @@ void displayControl(void * parameters)
 {
     for(;;)
     {
-        String leituraTmp = "";
         if( xSemaphoreTake(currentSensor.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
         {
-            leituraTmp = (String)currentSensor.leitura;
+            displayStruct.leituraBuffer = (String)currentSensor.leitura;
             
             xSemaphoreGive(currentSensor.mutex);
         }
 
-        if(!leituraTmp.equals(""))
+        if(!displayStruct.leituraBuffer.equals(""))
         {
-            if(xSemaphoreTake(telemetryService.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE && xSemaphoreTake(electricalRelay.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
+            if(xSemaphoreTake(telemetryService.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
             {
-                displayLCD.clear();
-                displayLCD.setCursor(0,0);
-                displayLCD.print(leituraTmp + "A");
-                displayLCD.setCursor(0,1);
-
                 switch (electricalMotor.config.state)
                 {
                     case WAIT:
-                        displayLCD.print("WAIT");
+                        displayStruct.stateBuffer = "WAIT";
                         break;
                     case TURN_ON:
-                        displayLCD.print("TURN ON");
+                        displayStruct.stateBuffer = "TURN ON";
                         break;
                     case KEEP_ON:
-                        displayLCD.print("KEEP ON " + (String)electricalMotor.config.current + "A");
+                        displayStruct.stateBuffer = "KEEP ON " + (String)electricalMotor.config.current + "A";
                         break;
                     case TURN_OFF:
-                        displayLCD.print("TURN OFF");
+                        displayStruct.stateBuffer = "TURN OFF";
                         break;
                     default:
-                        displayLCD.print("UNKNOWN");
+                        displayStruct.stateBuffer = "UNKNOWN";
                         break;
                 }
 
-                xSemaphoreGive(electricalRelay.mutex);
+                displayStruct.finalBuffer = displayStruct.leituraBuffer + displayStruct.stateBuffer;
+    
+                if(!displayStruct.current.equals(displayStruct.finalBuffer))
+                {
+                    displayLCD.clear();
+                    displayLCD.setCursor(0,0);
+                    displayLCD.print(displayStruct.leituraBuffer + "A");
+                    displayLCD.setCursor(0,1);
+                    displayLCD.print(displayStruct.stateBuffer);
+    
+                    displayStruct.current = displayStruct.finalBuffer;
+                }
+
                 xSemaphoreGive(telemetryService.mutex);
             }
         }
@@ -339,22 +356,12 @@ void displayControl(void * parameters)
     }
 }
 
-void refreshI2CClock(void * parameters) 
-{
-    for(;;)
-    {
-        Wire.setClock(10000); // frequência do I2C diminuida para minimizar o problema de baixa tensão provocado pelo LoRa (o padrão é 100000Hz)
-
-        vTaskDelay(5000/ portTICK_PERIOD_MS); // 5000ms / 5s
-    }
-}
-
 /// Função que executa apenas uma vez e sempre que o microcontrolador é ligado.
 void setup()
 {
-    Heltec.begin(false /*DisplayEnable Enable*/, true /*Heltec.LoRa Enable*/, true /*Serial Enable*/, true /*PABOOST Enable*/, 915E6 /*long BAND*/);
+    Heltec.begin(false /*DisplayEnable Enable*/, true /*Heltec.LoRa Enable*/, true /*Serial Enable*/, false /*PABOOST Enable*/, 915E6 /*long BAND*/); // desativar PABOOST para reduzir consumo
 
-    Wire.setClock(10000);
+    Wire.setClock(100000); // Forçar clock alto do I2C para não atrasar a liberação do mutex de comunicação
 
     displayLCD.begin(16, 2); /* comprimento, altura */
 
@@ -365,6 +372,11 @@ void setup()
     LoRa.receive();
     Serial.println("[MAIN] Heltec.LoRa init succeeded.");
 
+    //
+    displayStruct.current = "";
+    displayStruct.stateBuffer = "";
+    displayStruct.leituraBuffer = "";
+    displayStruct.finalBuffer = "";
     //
     telemetryService.mutex      = xSemaphoreCreateMutex();
     telemetryService.outBuffer  = "";
@@ -394,10 +406,6 @@ void setup()
 
     Serial.println("[MAIN] Launching displayControl thread.");
     xTaskCreate(displayControl,"displayControl", 2000, NULL, 3, NULL); // prioridade 3
-
-    Serial.println("[MAIN] Launching refreshI2CClock thread.");
-    xTaskCreate(refreshI2CClock,"refreshI2CClock", 1000, NULL, 1, NULL); // prioridade 3
-
 
     Serial.println("[MAIN] Waiting for server command.");
 
