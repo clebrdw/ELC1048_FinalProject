@@ -88,12 +88,11 @@ void currentSensorReader(void * parameters)
 {
     for(;;)
     {
-      
         bool tmpStatus = false;
-        
         if(xSemaphoreTake(electricalRelay.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
         {
             tmpStatus = electricalRelay.status;
+
             xSemaphoreGive(electricalRelay.mutex);
         }
 
@@ -139,6 +138,7 @@ void currentSensorReader(void * parameters)
             }
             xSemaphoreGive(currentSensor.mutex);
         }
+
         vTaskDelay(10/ portTICK_PERIOD_MS); // 10ms
     }
 }
@@ -156,26 +156,19 @@ void telemetryInfoSender(void * parameters)
 
         if(xSemaphoreTake(telemetryService.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
         {
-            int aux;
-            while((aux++) < 1000) {}
-            aux=0;
-          
             LoRa.beginPacket();                               // start packet
             LoRa.write(serverAddress);                        // add serverAddress address
             LoRa.write(telemetryService.outBuffer.length());  // add payload length
             LoRa.print(telemetryService.outBuffer);           // add payload
             LoRa.endPacket();                                 // finish packet and send it
 
+            Serial.println("[telemetrySender] Sent: " + telemetryService.outBuffer + "A");
+
             LoRa.receive(); // coloca o LoRa em modo listening novamente
 
-            Serial.println("[telemetrySender] Sent: " + telemetryService.outBuffer + "A");
-        
-            while((aux++) < 1000) {}
-            aux=0;
-            
             xSemaphoreGive(telemetryService.mutex);
         }
-        
+
         vTaskDelay(1500/ portTICK_PERIOD_MS); // ~2000ms // 2s ->(1.5seg + 0.5seg de consumo do LoRa) 
     }
 }
@@ -185,10 +178,15 @@ void telemetryActionReceiver(int packetSize)
     if (packetSize == 0)
         return;
 
+    String splitter[2];
+    char buf[sizeof(telemetryService.inBuffer)];
+    int i = 0;
+    char *p = buf;
+    char *str;
+    
     if(xSemaphoreTake(telemetryService.mutex, portMAX_DELAY) == pdTRUE)
     {
-
-        // read packet header bytes:
+        // read packet header bytes
         int destination = LoRa.read();      // destination address
         byte incomingLength = LoRa.read();  // incoming msg length
 
@@ -208,25 +206,20 @@ void telemetryActionReceiver(int packetSize)
             goto libera;
         }
 
+        /// Dividindo as informações da string em variáveis
+        telemetryService.inBuffer.toCharArray(buf, sizeof(buf));
+        while ((str = strtok_r(p, ";", &p)) != NULL)
+        {
+            splitter[i++] = str;
+        }
+
+        #if 0
+            Serial.println("[actionReceiver] Received: " + telemetryService.inBuffer);
+        #endif
+
         libera:
         xSemaphoreGive(telemetryService.mutex);
     }
-
-    /// Dividindo as informações da string em variáveis 
-    char buf[sizeof(telemetryService.inBuffer)];
-    String splitter[2];
-    int i = 0;
-    telemetryService.inBuffer.toCharArray(buf, sizeof(buf));
-    char *p = buf;
-    char *str;
-    while ((str = strtok_r(p, ";", &p)) != NULL)
-    {
-        splitter[i++] = str;
-    }
-    
-    #if 0
-        Serial.println("[actionReceiver] Received: '" + telemetryService.inBuffer);
-    #endif
 
     if(xSemaphoreTake(electricalRelay.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
     {
@@ -281,9 +274,17 @@ void electricalRelayControl(void * parameters)
 {
     for(;;)
     {
+        double leituraAtual = 0;
+        if(xSemaphoreTake(currentSensor.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
+        {
+            leituraAtual = currentSensor.leitura;
+
+            xSemaphoreGive(currentSensor.mutex);
+        }
+
         if(xSemaphoreTake(electricalRelay.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
         {
-            if(electricalMotor.config.status && (electricalMotor.config.current > currentSensor.leitura || electricalMotor.config.current == -1))
+            if(electricalMotor.config.status && (electricalMotor.config.current > leituraAtual || electricalMotor.config.current == -1))
             {
                 electricalRelay.status = true;
                 digitalWrite(LED_PIN, HIGH);
@@ -329,7 +330,7 @@ void displayControl(void * parameters)
                     displayStruct.stateBuffer = "TURNING ON";
                     break;
                 case KEEP_ON:
-                    displayStruct.stateBuffer = "KEEPING ON " + (String)electricalMotor.config.current + "A";
+                    displayStruct.stateBuffer = "KEEPING ON " + displayStruct.targetBuffer;
                     break;
                 case TURN_OFF:
                     displayStruct.stateBuffer = "TURNING OFF";
