@@ -166,7 +166,7 @@ void telemetryActionSender(void * parameters)
             }
             xSemaphoreGive(telemetryService.mutex);
         }
-        vTaskDelay(200/ portTICK_PERIOD_MS); // 200ms
+        vTaskDelay(100/ portTICK_PERIOD_MS); // 100ms
     }
 }
 
@@ -250,14 +250,14 @@ void setup()
     dataStorage.index = 0;
 
     Serial.println("[MAIN] Launching telemetryActionSender thread.");
-    xTaskCreate(telemetryActionSender,"telemetryActionSender", 2000, NULL, 1, NULL); // prioridade 2
+    xTaskCreate(telemetryActionSender,"telemetryActionSender", 2000, NULL, 3, NULL); // prioridade 3
 
     Serial.println("[MAIN] Launching serialReader thread.");
-    xTaskCreate(serialReader,"serialReader", 2000, NULL, 1, NULL); // prioridade 2
+    xTaskCreate(serialReader,"serialReader", 2000, NULL, 1, NULL); // prioridade 1
 
     /// Cria a task para salvar os dados no Cartao de Memoria
     Serial.println("[MAIN] Launching dataLogging thread.");
-    xTaskCreate(dataLogging,"dataLogging", 2000, NULL, 3, NULL); // prioridade 3
+    xTaskCreate(dataLogging,"dataLogging", 2000, NULL, 2, NULL); // prioridade 2
 
     Serial.println("[MAIN] Waiting for client data.");
 }
