@@ -5,6 +5,7 @@
 * @link https://github.com/CristianAugusto/ELC1048_FinalProject
 * @date 08-2021
 */
+
 #include "heltec.h"
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
@@ -27,7 +28,6 @@ typedef struct
     SemaphoreHandle_t mutex;
     String outBuffer;
     String inBuffer;
-    byte msgCount;
 } telemetryServiceStruct;
 
 /// currentSensor
@@ -81,7 +81,6 @@ void currentSensorReader(void * parameters)
 {
     for(;;)
     {
-        /*if( xSemaphoreTake( Mutex_teste, ( TickType_t ) WAIT_TICKS ) == pdTRUE)*/
         if(xSemaphoreTake(currentSensor.mutex, portMAX_DELAY) == pdTRUE)
         {
             if(currentSensor.index == 10)
@@ -148,14 +147,11 @@ void telemetryInfoSender(void * parameters)
             while((aux++) < 1000) {}
             aux=0;
           
-            LoRa.beginPacket();                                 // start packet
-            LoRa.write(serverAddress);                          // add serverAddress address
-            LoRa.write(localAddress);                           // add sender address
-            LoRa.write(telemetryService.msgCount);              // add message ID
-            LoRa.write(telemetryService.outBuffer.length());    // add payload length
-            LoRa.print(telemetryService.outBuffer);             // add payload
-            LoRa.endPacket();                                   // finish packet and send it
-            telemetryService.msgCount++;                        // increment message ID
+            LoRa.beginPacket();                               // start packet
+            LoRa.write(serverAddress);                        // add serverAddress address
+            LoRa.write(telemetryService.outBuffer.length());  // add payload length
+            LoRa.print(telemetryService.outBuffer);           // add payload
+            LoRa.endPacket();                                 // finish packet and send it
 
             LoRa.receive(); // coloca o LoRa em modo listening novamente
 
@@ -167,7 +163,7 @@ void telemetryInfoSender(void * parameters)
             xSemaphoreGive(telemetryService.mutex);
         }
         
-        vTaskDelay(2500/ portTICK_PERIOD_MS); // ~2000ms // 2s ->(1.5seg + 0.5seg de atraso LoRa) 
+        vTaskDelay(1500/ portTICK_PERIOD_MS); // ~2000ms // 2s ->(1.5seg + 0.5seg de consumo do LoRa) 
     }
 }
 
@@ -180,10 +176,8 @@ void telemetryActionReceiver(int packetSize)
     {
 
         // read packet header bytes:
-        int recipient = LoRa.read();          // recipient address
-        byte sender = LoRa.read();            // sender address
-        byte incomingMsgId = LoRa.read();     // incoming msg ID
-        byte incomingLength = LoRa.read();    // incoming msg length
+        int destination = LoRa.read();      // destination address
+        byte incomingLength = LoRa.read();  // incoming msg length
 
         telemetryService.inBuffer = "";
         while (LoRa.available())
@@ -195,46 +189,35 @@ void telemetryActionReceiver(int packetSize)
             goto libera;
         }
 
-        // if the recipient isn't this device or broadcast,
-        if (recipient != localAddress)
+        if (destination != localAddress)
         {
             Serial.println("[telemetryReceiver] ERROR: this message isn't for me.");
             goto libera;
         }
 
-        /*
-        Serial.print("[RECEIVED] From 0x" + String(sender, HEX));
-        Serial.println(" to 0x" + String(recipient, HEX));
-        Serial.println(" - ID: " + String(incomingMsgId));
-        Serial.println(" : " + telemetryService.inBuffer);
-         */
-
-        libera: // verificar outros possíveis casos
+        libera:
         xSemaphoreGive(telemetryService.mutex);
     }
 
+    /// Dividindo as informações da string em variáveis 
     char buf[sizeof(telemetryService.inBuffer)];
-    
-    String tmp[2];
+    String splitter[2];
     int i = 0;
-    
     telemetryService.inBuffer.toCharArray(buf, sizeof(buf));
     char *p = buf;
     char *str;
     while ((str = strtok_r(p, ";", &p)) != NULL)
     {
-        tmp[i++] = str;
+        splitter[i++] = str;
     }
 
     //Serial.println("[actionReceiver] Received: '" + telemetryService.inBuffer);
-
-    // comparar estado atual com novo, não atualizar caso seja igual
 
     if(xSemaphoreTake(electricalRelay.mutex, portMAX_DELAY) == pdTRUE)
     {
         motorConfigStruct newConfig;
 
-        if(tmp[0].equals("1")) // aguardar
+        if(splitter[0].equals("1")) // aguardar
         {
             newConfig.status = false;
             newConfig.current = 0;
@@ -242,7 +225,7 @@ void telemetryActionReceiver(int packetSize)
             electricalMotor.config = newConfig;
             Serial.println("[actionReceiver] Received: wait");
         }
-        else if(tmp[0].equals("2")) // ligar (sem limite)
+        else if(splitter[0].equals("2")) // ligar (sem limite)
         {
             newConfig.status = true;
             newConfig.current = -1;
@@ -250,15 +233,15 @@ void telemetryActionReceiver(int packetSize)
             electricalMotor.config = newConfig;
             Serial.println("[actionReceiver] Received: turn on");
         }
-        else if(tmp[0].equals("3")) // manter em
+        else if(splitter[0].equals("3")) // manter em xA
         {
             newConfig.status = true;
-            newConfig.current = tmp[1].toInt(); // receber valor por socket
+            newConfig.current = splitter[1].toInt();
             newConfig.state = KEEP_ON;
             electricalMotor.config = newConfig;
-            Serial.println("[actionReceiver] Received: keep on " + tmp[1] + "A");
+            Serial.println("[actionReceiver] Received: keep on " + splitter[1] + "A");
         }
-        else if(tmp[0].equals("4")) // desligar
+        else if(splitter[0].equals("4")) // desligar
         {
             newConfig.status = false;
             newConfig.current = 0;
@@ -266,7 +249,7 @@ void telemetryActionReceiver(int packetSize)
             electricalMotor.config = newConfig;
             Serial.println("[actionReceiver] Received: turn off");
         }
-        else if(tmp[0].equals("0")) // OK
+        else if(splitter[0].equals("0")) // OK
         {
             Serial.println("[actionReceiver] Received: OK");
         }
@@ -361,11 +344,11 @@ void setup()
 {
     Heltec.begin(false /*DisplayEnable Enable*/, true /*Heltec.LoRa Enable*/, true /*Serial Enable*/, false /*PABOOST Enable*/, 915E6 /*long BAND*/); // desativar PABOOST para reduzir consumo
 
-    Wire.setClock(100000); // Forçar clock alto do I2C para não atrasar a liberação do mutex de comunicação
+    Wire.setClock(1000000); // Forçar clock alto do I2C para não atrasar a liberação do mutex de comunicação
 
-    displayLCD.begin(16, 2); /* comprimento, altura */
+    displayLCD.begin(16, 2); // (comprimento, altura) do display LCD
 
-    pinMode(LED_PIN, OUTPUT); // led
+    pinMode(LED_PIN, OUTPUT); // Electrical Relay simulator's LED
 
     Serial.println("[MAIN] Launching Heltec.LoRa service.");
     LoRa.onReceive(telemetryActionReceiver);
@@ -373,26 +356,25 @@ void setup()
     Serial.println("[MAIN] Heltec.LoRa init succeeded.");
 
     //
-    displayStruct.current = "";
-    displayStruct.stateBuffer = "";
+    displayStruct.current       = "";
+    displayStruct.stateBuffer   = "";
     displayStruct.leituraBuffer = "";
-    displayStruct.finalBuffer = "";
+    displayStruct.finalBuffer   = "";
     //
     telemetryService.mutex      = xSemaphoreCreateMutex();
     telemetryService.outBuffer  = "";
     telemetryService.inBuffer   = "";
-    telemetryService.msgCount   = 0;
     //
     currentSensor.mutex     = xSemaphoreCreateMutex();
     currentSensor.index     = 0;
     currentSensor.leitura   = 0;
     //
-    electricalMotor.config.status = false;
-    electricalMotor.config.current = 0;
-    electricalMotor.config.state = WAIT;
+    electricalMotor.config.status   = false;
+    electricalMotor.config.current  = 0;
+    electricalMotor.config.state    = WAIT;
     //
-    electricalRelay.mutex = xSemaphoreCreateMutex();
-    electricalRelay.status = false;
+    electricalRelay.mutex   = xSemaphoreCreateMutex();
+    electricalRelay.status  = false;
     //
 
     Serial.println("[MAIN] Launching currentSensorReader thread.");
@@ -405,12 +387,9 @@ void setup()
     xTaskCreate(electricalRelayControl,"electricalRelayControl", 2000, NULL, 3, NULL); // prioridade 3
 
     Serial.println("[MAIN] Launching displayControl thread.");
-    xTaskCreate(displayControl,"displayControl", 2000, NULL, 3, NULL); // prioridade 3
+    xTaskCreate(displayControl,"displayControl", 2000, NULL, 1, NULL); // prioridade 3
 
-    Serial.println("[MAIN] Waiting for server command.");
-
-    /*xTaskCreate(task1,"Teste 1", 2000, NULL, 2, NULL);
-    xTaskCreate(task2,"Teste 2", 1000, NULL, 1, NULL);*/
+    Serial.println("[MAIN] Waiting for server command.\n");
 }
 /// Função utilizada normalmente quando o propósito do código não é RTOS.
 void loop()
