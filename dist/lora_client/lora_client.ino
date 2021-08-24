@@ -77,6 +77,12 @@ telemetryServiceStruct telemetryService;
 electricalMotorStruct electricalMotor;
 displayLCDStruct displayStruct;
 
+void currentSensorReader(void * parameters);
+void telemetryInfoSender(void * parameters);
+void telemetryActionReceiver(int packetSize);
+void electricalRelayControl(void * parameters);
+void displayControl(void * parameters);
+
 /// Função que simula a leitura de corrente
 void currentSensorReader(void * parameters)
 {
@@ -133,7 +139,7 @@ void currentSensorReader(void * parameters)
             }
             xSemaphoreGive(currentSensor.mutex);
         }
-        vTaskDelay(10/ portTICK_PERIOD_MS); // 100ms
+        vTaskDelay(10/ portTICK_PERIOD_MS); // 10ms
     }
 }
 
@@ -356,12 +362,23 @@ void displayControl(void * parameters)
     }
 }
 
+/// 
+void refreshI2C(void * parameters) 
+{
+    for(;;)
+    {
+        Wire.setClock(1000);
+        
+        vTaskDelay(3000/ portTICK_PERIOD_MS); // 3000ms / 3s
+    }
+}
+
 /// Função que executa apenas uma vez e sempre que o microcontrolador é ligado.
 void setup()
 {
     Heltec.begin(false /*DisplayEnable Enable*/, true /*Heltec.LoRa Enable*/, true /*Serial Enable*/, false /*PABOOST Enable*/, 915E6 /*long BAND*/); // desativar PABOOST para reduzir consumo
 
-    Wire.setClock(100000); // Forçar clock alto do I2C para não atrasar a liberação do mutex de comunicação
+    Wire.setClock(1000); // Forçar clock I2C para manter seu funcionamento correto
     
     displayLCD.begin(16, 2); // (comprimento, altura) do display LCD
 
@@ -399,13 +416,16 @@ void setup()
     xTaskCreate(currentSensorReader,"currentSensorReader", 2000, NULL, 2, NULL); // prioridade 2
 
     Serial.println("[MAIN] Launching telemetryInfoSender thread.");
-    xTaskCreate(telemetryInfoSender,"telemetryInfoSender", 2000, NULL, 1, NULL); // prioridade 1
+    xTaskCreate(telemetryInfoSender,"telemetryInfoSender", 2000, NULL, 5, NULL); // prioridade 5
 
     Serial.println("[MAIN] Launching electricalRelayControl thread.");
-    xTaskCreate(electricalRelayControl,"electricalRelayControl", 2000, NULL, 3, NULL); // prioridade 3
+    xTaskCreate(electricalRelayControl,"electricalRelayControl", 2000, NULL, 4, NULL); // prioridade 4
 
     Serial.println("[MAIN] Launching displayControl thread.");
     xTaskCreate(displayControl,"displayControl", 2000, NULL, 3, NULL); // prioridade 3
+
+    Serial.println("[MAIN] Launching refreshI2C thread.");
+    xTaskCreate(refreshI2C,"refreshI2C", 1000, NULL, 1, NULL); // prioridade 1
 
     Serial.println("[MAIN] Waiting for server command.\n");
 }
