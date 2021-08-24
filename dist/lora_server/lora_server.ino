@@ -11,12 +11,14 @@
 #include "SD.h"
 #include "SPI.h"
 
-#define SD_CS 23
-#define SD_SCK 17
-#define SD_MOSI 12
-#define SD_MISO 13
+#if 0
+    #define SD_CS 23
+    #define SD_SCK 17
+    #define SD_MOSI 12
+    #define SD_MISO 13
 
-File MicroSDcard;
+    File MicroSDcard;
+#endif
 
 /// MACRO de tempo de espera para tentar novamente o semáforo
 #define WAIT_TICKS 3
@@ -43,8 +45,8 @@ typedef struct
 typedef struct
 {
     SemaphoreHandle_t mutex;
-    String buffer;
-    double samples[10];
+    String tmp;
+    String buffer[10];
     int index;
 } dataStorageStruct;
 
@@ -70,7 +72,7 @@ void telemetryInfoReceiver(int packetSize)
 
         if(xSemaphoreTake(dataStorage.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
         {
-            dataStorage.samples[++dataStorage.index] = telemetryService.inBuffer;
+            dataStorage.buffer[++dataStorage.index] = telemetryService.inBuffer;
 
             xSemaphoreGive(dataStorage.mutex);
         }
@@ -195,9 +197,9 @@ void dataLogging(void * parameters)
         {
             while(dataStorage.index >= 0) // Armazena todas as leituras disponíveis em uma única string
             {
-                dataStorage.buffer += dataStorage.samples[dataStorage.index--] + ", ";
+                dataStorage.tmp += dataStorage.buffer[dataStorage.index--] + ", ";
             }
-            if(!dataStorage.buffer.equals(""))
+            if(!dataStorage.tmp.equals(""))
             {
                 #if 0
                     // Abre o arquivo para adicionar algo
@@ -212,7 +214,7 @@ void dataLogging(void * parameters)
                     for(int i=0; i<1000; i++){ } // Simula escrita no cartão SD
                 #endif
 
-                dataStorage.buffer = ""; // reseta buffer
+                dataStorage.tmp = ""; // reseta auxiliar
             }
             xSemaphoreGive(dataStorage.mutex);
         }
@@ -230,13 +232,15 @@ void setup()
     LoRa.receive();
     Serial.println("[MAIN] Heltec.LoRa init succeeded.");
 
-    Serial.println("[MAIN] Mounting MicroSD card.");
-    SPIClass sd_spi(HSPI);
-    sd_spi.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
-    if (!SD.begin(SD_CS, sd_spi))
-        Serial.println("[MAIN] MicroSD card mounting failed.");
-    else
-        Serial.println("[MAIN] MicroSD card mounting succeeded.");
+    #if 0
+        Serial.println("[MAIN] Mounting MicroSD card.");
+        SPIClass sd_spi(HSPI);
+        sd_spi.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
+        if (!SD.begin(SD_CS, sd_spi))
+            Serial.println("[MAIN] MicroSD card mounting failed.");
+        else
+            Serial.println("[MAIN] MicroSD card mounting succeeded.");
+    #endif
 
     telemetryService.mutex = xSemaphoreCreateMutex();
     telemetryService.outBuffer = "1"; // iniciar com wait
@@ -246,7 +250,7 @@ void setup()
     serialService.inBuffer = "";
 
     dataStorage.mutex = xSemaphoreCreateMutex();
-    dataStorage.buffer = "";
+    dataStorage.tmp = "";
     dataStorage.index = 0;
 
     Serial.println("[MAIN] Launching telemetryActionSender thread.");
