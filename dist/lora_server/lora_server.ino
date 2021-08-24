@@ -226,7 +226,7 @@ void salvaDados(void * parameters)
 /// Função que executa apenas uma vez e sempre que o microcontrolador é ligado.
 void setup()
 {
-    Heltec.begin(false /*DisplayEnable Enable*/, true /*Heltec.LoRa Enable*/, true /*Serial Enable*/, true /*PABOOST Enable*/, 915E6 /*long BAND*/);
+    Heltec.begin(false /*DisplayEnable Enable*/, true /*Heltec.LoRa Enable*/, true /*Serial Enable*/, false /*PABOOST Enable*/, 915E6 /*long BAND*/);
 
     Serial.println("[MAIN] Launching Heltec.LoRa service.");
     LoRa.onReceive(telemetryInfoReceiver);
@@ -234,7 +234,7 @@ void setup()
     Serial.println("[MAIN] Heltec.LoRa init succeeded.");
 
 
-    if(!SD.begin()){
+    /*if(!SD.begin()){
         Serial.println("Card Mount Failed");
         return;
     }
@@ -243,7 +243,7 @@ void setup()
     // Cria o arquivo data_sensor.txt
     myFile = SD.open("/data_sensor.txt", FILE_WRITE);
     // Fecha o arquivo
-    myFile.close();
+    myFile.close();*/
 
 
     //
@@ -264,8 +264,8 @@ void setup()
     xTaskCreate(serialReader,"serialReader", 2000, NULL, 1, NULL); // prioridade 2
     //
 
-    // Cria a task para salvar os dados no Cartao de Memoria
-    xTaskCreate(salvaDados,"salvaDados", 2000, NULL, 3, NULL); // prioridade 3
+    /*// Cria a task para salvar os dados no Cartao de Memoria
+    xTaskCreate(salvaDados,"salvaDados", 2000, NULL, 3, NULL); // prioridade 3*/
 
     /*Serial.println("[MAIN] Launching dataStorager thread.");
     xTaskCreate(currentSensorReader,"dataStorager", 2000, NULL, 1, NULL); // prioridade 2*/
