@@ -11,9 +11,6 @@
 #include "SD.h"
 #include "SPI.h"
 
-#include <RH_RF95.h>
-#include <RHSoftwareSPI.h>
-
 #define SD_CS 23
 #define SD_SCK 17
 #define SD_MOSI 12
@@ -228,13 +225,13 @@ void setup()
     LoRa.receive();
     Serial.println("[MAIN] Heltec.LoRa init succeeded.");
 
+    Serial.println("[MAIN] Mounting MicroSD card.");
     SPIClass sd_spi(HSPI);
     sd_spi.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
-
     if (!SD.begin(SD_CS, sd_spi))
-        Serial.println("SD Card: mounting failed.");
+        Serial.println("[MAIN] MicroSD card mounting failed.");
     else
-        Serial.println("SD Card: mounted.");
+        Serial.println("[MAIN] MicroSD card mounting succeeded.");
 
     /*if(!SD.begin()){
         Serial.println("Card Mount Failed");
