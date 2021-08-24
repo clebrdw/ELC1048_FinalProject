@@ -81,7 +81,7 @@ void currentSensorReader(void * parameters)
 {
     for(;;)
     {
-        if(xSemaphoreTake(currentSensor.mutex, portMAX_DELAY) == pdTRUE)
+        if(xSemaphoreTake(currentSensor.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
         {
             if(currentSensor.index == 10)
             {
@@ -108,13 +108,8 @@ void currentSensorReader(void * parameters)
                 }
                 else
                 {
-                    if(currentSensor.leitura > 0)
-                    {
-                        if(currentSensor.leitura < 0) // corrente mínima
-                            currentSensor.leitura = 0;
-                        else
-                            currentSensor.leitura -= sinal;
-                    }
+                    if((currentSensor.leitura -= sinal) < 0) // corrente mínima
+                        currentSensor.leitura = 0;
                 }
 
                 //Serial.println("[currentSensorReader] Read: " + (String)currentSensor.leitura);
@@ -134,14 +129,14 @@ void telemetryInfoSender(void * parameters)
 {
     for(;;)
     {
-        if(xSemaphoreTake(currentSensor.mutex, portMAX_DELAY) == pdTRUE)
+        if(xSemaphoreTake(currentSensor.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
         {
             telemetryService.outBuffer = (String)currentSensor.leitura;
 
             xSemaphoreGive(currentSensor.mutex);
         }
 
-        if(xSemaphoreTake(telemetryService.mutex, portMAX_DELAY) == pdTRUE)
+        if(xSemaphoreTake(telemetryService.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
         {
             int aux;
             while((aux++) < 1000) {}
@@ -213,14 +208,14 @@ void telemetryActionReceiver(int packetSize)
 
     //Serial.println("[actionReceiver] Received: '" + telemetryService.inBuffer);
 
-    if(xSemaphoreTake(electricalRelay.mutex, portMAX_DELAY) == pdTRUE)
+    if(xSemaphoreTake(electricalRelay.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
     {
         motorConfigStruct newConfig;
 
         if(splitter[0].equals("1")) // aguardar
         {
-            newConfig.status = false;
-            newConfig.current = 0;
+            newConfig.status = electricalMotor.config.status;
+            newConfig.current = electricalMotor.config.current;
             newConfig.state = WAIT;
             electricalMotor.config = newConfig;
             Serial.println("[actionReceiver] Received: wait");
@@ -266,7 +261,7 @@ void electricalRelayControl(void * parameters)
 {
     for(;;)
     {
-        if(xSemaphoreTake(electricalRelay.mutex, portMAX_DELAY) == pdTRUE)
+        if(xSemaphoreTake(electricalRelay.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
         {
             if(electricalMotor.config.status && (electricalMotor.config.current > currentSensor.leitura || electricalMotor.config.current == -1))
             {
@@ -281,7 +276,7 @@ void electricalRelayControl(void * parameters)
 
             xSemaphoreGive(electricalRelay.mutex);
         }
-        vTaskDelay(100/ portTICK_PERIOD_MS); // 100ms
+        vTaskDelay(400/ portTICK_PERIOD_MS); // 400ms
     }
 }
 
@@ -289,7 +284,7 @@ void displayControl(void * parameters)
 {
     for(;;)
     {
-        if( xSemaphoreTake(currentSensor.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
+        if(xSemaphoreTake(currentSensor.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
         {
             displayStruct.leituraBuffer = (String)currentSensor.leitura;
             
@@ -303,16 +298,16 @@ void displayControl(void * parameters)
                 switch (electricalMotor.config.state)
                 {
                     case WAIT:
-                        displayStruct.stateBuffer = "WAIT";
+                        displayStruct.stateBuffer = "WAITING";
                         break;
                     case TURN_ON:
-                        displayStruct.stateBuffer = "TURN ON";
+                        displayStruct.stateBuffer = "TURNING ON";
                         break;
                     case KEEP_ON:
-                        displayStruct.stateBuffer = "KEEP ON " + (String)electricalMotor.config.current + "A";
+                        displayStruct.stateBuffer = "KEEPING ON " + (String)electricalMotor.config.current + "A";
                         break;
                     case TURN_OFF:
-                        displayStruct.stateBuffer = "TURN OFF";
+                        displayStruct.stateBuffer = "TURNING OFF";
                         break;
                     default:
                         displayStruct.stateBuffer = "UNKNOWN";
@@ -335,7 +330,7 @@ void displayControl(void * parameters)
                 xSemaphoreGive(telemetryService.mutex);
             }
         }
-        vTaskDelay(1000/ portTICK_PERIOD_MS); // 1000ms / 1s
+        vTaskDelay(1500/ portTICK_PERIOD_MS); // 1500ms / 1.5s
     }
 }
 
@@ -344,7 +339,7 @@ void setup()
 {
     Heltec.begin(false /*DisplayEnable Enable*/, true /*Heltec.LoRa Enable*/, true /*Serial Enable*/, false /*PABOOST Enable*/, 915E6 /*long BAND*/); // desativar PABOOST para reduzir consumo
 
-    Wire.setClock(1000000); // Forçar clock alto do I2C para não atrasar a liberação do mutex de comunicação
+    Wire.setClock(100000); // Forçar clock alto do I2C para não atrasar a liberação do mutex de comunicação
 
     displayLCD.begin(16, 2); // (comprimento, altura) do display LCD
 
