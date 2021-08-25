@@ -205,9 +205,9 @@ void dataLogging(void * parameters)
                     // Abre o arquivo para adicionar algo
                     MicroSDcard = SD.open("/data_sensor.txt", FILE_APPEND);
                     // Adiciona algo
-                    myFile.print(dataStorage.buffer);
+                    MicroSDcard.print(dataStorage.buffer);
                     // Fecha o arquivo
-                    myFile.close();
+                    MicroSDcard.close();
                 #endif
 
                 #if 1
