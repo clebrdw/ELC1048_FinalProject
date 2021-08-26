@@ -10,13 +10,15 @@
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
 
-LiquidCrystal_I2C displayLCD(0x3F, 2,1,0,4,5,6,7,3, POSITIVE); // configuração do canal I2C
+/// Configuração do canal I2C para o Display LCD 16x2
+LiquidCrystal_I2C displayLCD(0x3F, 2,1,0,4,5,6,7,3, POSITIVE); 
 
+/// Enumeração criada para identificar os possíveis estados da carga
 enum State { WAIT, TURN_ON, KEEP_ON, TURN_OFF };
 
 /// MACRO de tempo de espera para tentar novamente o semáforo
 #define WAIT_TICKS 3
-
+/// MACRO da porta utilizada pelo relé
 #define LED_PIN 32
 
 byte localAddress = 0xBB;
@@ -83,7 +85,7 @@ void telemetryActionReceiver(int packetSize);
 void electricalRelayControl(void * parameters);
 void displayControl(void * parameters);
 
-/// Função que simula a leitura de corrente
+/// Função que simula a leitura de corrente e em seguida armazena o valor em uma variavel temporária
 void currentSensorReader(void * parameters)
 {
     for(;;)
@@ -142,7 +144,7 @@ void currentSensorReader(void * parameters)
         vTaskDelay(10/ portTICK_PERIOD_MS); // 10ms
     }
 }
-
+/// Tarefa responsável pelo envio periódico da telemetria para o servidor
 void telemetryInfoSender(void * parameters)
 {
     for(;;)
@@ -172,7 +174,7 @@ void telemetryInfoSender(void * parameters)
         vTaskDelay(1500/ portTICK_PERIOD_MS); // ~2000ms // 2s ->(1.5seg + 0.5seg de consumo do LoRa) 
     }
 }
-
+/// Tarefa responsável pelo recebimento e tratamento dos comandos vindos do Servidor.
 void telemetryActionReceiver(int packetSize)
 {
     if (packetSize == 0)
@@ -206,7 +208,7 @@ void telemetryActionReceiver(int packetSize)
             goto libera;
         }
 
-        /// Dividindo as informações da string em variáveis
+        // Dividindo as informações da string em variáveis
         telemetryService.inBuffer.toCharArray(buf, sizeof(buf));
         while ((str = strtok_r(p, ";", &p)) != NULL)
         {
@@ -224,7 +226,7 @@ void telemetryActionReceiver(int packetSize)
     if(xSemaphoreTake(electricalRelay.mutex, ( TickType_t ) WAIT_TICKS ) == pdTRUE)
     {
         motorConfigStruct newConfig;
-
+        /** ' 1 ' - Aguardar: mantem estado atual*/
         if(splitter[0].equals("1")) // aguardar
         {
             newConfig.status = electricalMotor.config.status;
@@ -233,6 +235,7 @@ void telemetryActionReceiver(int packetSize)
             electricalMotor.config = newConfig;
             Serial.println("[actionReceiver] Received: wait");
         }
+        /** ' 2 ' - Ligar: Liga a carga independentemente do valor de corrente*/
         else if(splitter[0].equals("2")) // ligar (sem limite definido)
         {
             newConfig.status = true;
@@ -241,6 +244,7 @@ void telemetryActionReceiver(int packetSize)
             electricalMotor.config = newConfig;
             Serial.println("[actionReceiver] Received: turn on");
         }
+        /** ' 3;valor ' - Manter em 'valor' Ampere: Configura o valor de corrente para a carga */
         else if(splitter[0].equals("3")) // manter em xA
         {
             newConfig.status = true;
@@ -249,6 +253,7 @@ void telemetryActionReceiver(int packetSize)
             electricalMotor.config = newConfig;
             Serial.println("[actionReceiver] Received: keep on " + splitter[1] + "A");
         }
+        /** ' 4 ' - Desligar: Desliga a carga */
         else if(splitter[0].equals("4")) // desligar
         {
             newConfig.status = false;
@@ -257,6 +262,7 @@ void telemetryActionReceiver(int packetSize)
             electricalMotor.config = newConfig;
             Serial.println("[actionReceiver] Received: turn off");
         }
+        /** ' 0 ' - Teste: Utilizado apenas para testar a comunicação, não produz qualquer efeito sobre a carga.*/
         else if(splitter[0].equals("0")) // OK
         {
             Serial.println("[actionReceiver] Received: OK");
@@ -269,7 +275,7 @@ void telemetryActionReceiver(int packetSize)
         xSemaphoreGive(electricalRelay.mutex);
     }
 }
-/// Função que cria uma thread que verifica se o valor atual é diferente etc
+/// Função que faz a ativação do relé conforme os dados atualizados pelas outras tarefas
 void electricalRelayControl(void * parameters) 
 {
     for(;;)
@@ -300,7 +306,7 @@ void electricalRelayControl(void * parameters)
         vTaskDelay(400/ portTICK_PERIOD_MS); // 400ms
     }
 }
-
+/// Função que demostra constantemente no display o status atual da carga.
 void displayControl(void * parameters) 
 {
     for(;;)

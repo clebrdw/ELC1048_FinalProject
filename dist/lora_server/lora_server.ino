@@ -54,6 +54,7 @@ telemetryServiceStruct telemetryService;
 serialServiceStruct serialService;
 dataStorageStruct dataStorage;
 
+/// Função atrelada ao evento de comunicação LoRa. Responsável por fazer a leitura dos dados do Cliente e armazenar em um buffer 
 void telemetryInfoReceiver(int packetSize)
 {
     if (packetSize == 0)
@@ -95,9 +96,11 @@ void telemetryInfoReceiver(int packetSize)
         xSemaphoreGive(telemetryService.mutex);
         
         LoRa.receive(); // coloca o LoRa em modo listening novamente
+        
     }
+    
 }
-
+/// Função responsável pelo tratamento dos dados de controle e posterior envio da mesma para o Cliente.
 void telemetryActionSender(void * parameters)
 {
     for(;;)
@@ -113,7 +116,7 @@ void telemetryActionSender(void * parameters)
                 }
                 else
                 {
-                    /// Dividindo as informações da string em variáveis
+                    // Dividindo as informações da string em variáveis
                     char buf[sizeof(telemetryService.inBuffer)];
                     String tmp[2];
                     int i = 0;
@@ -171,7 +174,7 @@ void telemetryActionSender(void * parameters)
         vTaskDelay(100/ portTICK_PERIOD_MS); // 100ms
     }
 }
-
+/// Função responsável pela leitura dos comandos que é feito pelo terminal serial. 
 void serialReader(void * parameters)
 {
     for(;;)
@@ -188,7 +191,7 @@ void serialReader(void * parameters)
         vTaskDelay(10/ portTICK_PERIOD_MS); // 10ms
     }
 }
-/// Função que armazena os dados recebidos no Cartão de Memória
+/// Função responsável por fazer a leitura do buffer e posterior armazenamento dos dados recebidos no Cartão de Memória
 void dataLogging(void * parameters)
 {
     for(;;)
@@ -218,7 +221,7 @@ void dataLogging(void * parameters)
             }
             xSemaphoreGive(dataStorage.mutex);
         }
-        vTaskDelay(1000/ portTICK_PERIOD_MS); // 1000ms
+        vTaskDelay(100/ portTICK_PERIOD_MS); // 1000ms
     }
 }
 
@@ -259,7 +262,6 @@ void setup()
     Serial.println("[MAIN] Launching serialReader thread.");
     xTaskCreate(serialReader,"serialReader", 2000, NULL, 1, NULL); // prioridade 1
 
-    /// Cria a task para salvar os dados no Cartao de Memoria
     Serial.println("[MAIN] Launching dataLogging thread.");
     xTaskCreate(dataLogging,"dataLogging", 2000, NULL, 2, NULL); // prioridade 2
 
